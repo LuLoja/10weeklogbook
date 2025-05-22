@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Up Your Dreams - Interaktives Logbuch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices:
+        - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML Stats. Justification: Clear, direct.
+        - Weekly Level Flow: Goal: Organize. Method: HTML/CSS Tabs for navigation. Justification: Organizes weekly content effectively.
+        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. Justification: Direct representation of source.
+        - Activity Focus Chart: Goal: Compare. Method: Chart.js Donut Chart (Selbstreflexion, Recherche, Gestaltung, Planung, Interaktion). Justification: Summarizes thematic distribution of activities.
+        - Gemini API - Stärken weiterdenken (Woche 1): Goal: Extend. Method: User input + API call -> Text output. Justification: Deepens self-reflection.
+        - Gemini API - Interviewfragen generieren (Woche 2): Goal: Assist. Method: User input + API call -> Text output. Justification: Provides practical help for job preparation.
+        - Gemini API - Nächste Schritte verfeinern (Woche 6): Goal: Refine. Method: User input + API call -> Text output. Justification: Helps in action planning.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAF8F5; /* Off-White/Light Beige */
+            color: #5D534A; /* Warm Dark Gray */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+                max-width: 500px;
+            }
+        }
+        .sticky-nav {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: rgba(250, 248, 245, 0.85); /* Semi-transparent background */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #5D534A; /* Warm Dark Gray */
+        }
+        .tab-button.active {
+            border-bottom-color: #F4A261; /* Warm Orange/Peach */
+            color: #E76F51; /* Terracotta */
+        }
+        .tab-button:hover {
+            background-color: rgba(168, 218, 220, 0.2); /* Soft Teal/Blue tint */
+        }
+        .content-card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 2rem; /* p-8 */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.05);
+            margin-bottom: 2rem; /* mb-8 */
+        }
+        .section-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #E76F51; /* Terracotta */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center;
+        }
+        .subsection-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            color: #F4A261; /* Warm Orange/Peach */
+            margin-top: 1.5rem; /* mt-6 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .input-field-placeholder {
+            background-color: #F8F9FA; /* Very light gray */
+            border: 1px dashed #A8DADC; /* Soft Teal/Blue */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.75rem; /* p-3 */
+            margin-top: 0.5rem; /* mt-2 */
+            font-style: italic;
+            color: #6c757d; /* Gray */
+            min-height: 50px;
+        }
+        .mission-list li {
+            padding-left: 1.75rem; /* pl-7 */
+            position: relative;
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .mission-list li::before {
+            content: '🎯'; /* Target emoji or other suitable Unicode */
+            position: absolute;
+            left: 0;
+            color: #F4A261; /* Warm Orange/Peach */
+            font-size: 1.25rem; /* text-xl */
+        }
+        .icon-placeholder {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #A8DADC; /* Soft Teal/Blue */
+            color: white;
+            font-weight: bold;
+            margin-right: 0.5rem; /* mr-2 */
+            font-style: normal;
+        }
+        .gemini-button {
+            background-color: #E76F51; /* Terracotta */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        .gemini-button:hover {
+            background-color: #D16040; /* Darker Terracotta */
+        }
+        .gemini-output {
+            margin-top: 0.75rem; /* mt-3 */
+            padding: 0.75rem; /* p-3 */
+            background-color: #FAF8F5; /* Off-White/Light Beige */
+            border-left: 4px solid #A8DADC; /* Soft Teal/Blue */
+            font-size: 0.875rem; /* text-sm */
+            color: #5D534A; /* Warm Dark Gray */
+            white-space: pre-wrap; /* Preserve line breaks from API */
+        }
+        .loading-indicator {
+            font-style: italic;
+            color: #F4A261;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-gradient-to-r from-[#A8DADC] to-[#F4A261] text-white py-10 px-4 text-center rounded-b-2xl shadow-lg">
+        <h1 class="text-4xl md:text-5xl font-bold mb-3">Level Up Your Dreams</h1>
+        <p class="text-xl md:text-2xl">Dein interaktiver Begleiter zur Traumkarriere</p>
+    </header>
+
+    <nav id="mainNav" class="sticky-nav py-3">
+        <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-2">
+            <a href="#overview" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Überblick</a>
+            <a href="#teil1" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Start</a>
+            <a href="#teil2" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Wöchentliche Level</a>
+            <a href="#fokus" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Schwerpunkte</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section id="overview" class="content-card">
+            <h2 class="section-title">Das Programm im Überblick</h2>
+            <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
+                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Dieses interaktive Tool bietet dir zusätzlich KI-gestützte Denkanstöße durch die Gemini API.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center mb-6">
+                <div class="bg-[#A8DADC]/30 p-6 rounded-lg shadow">
+                    <div class="text-5xl font-bold text-[#E76F51]">10</div>
+                    <div class="text-xl font-semibold text-[#5D534A]">Wochen</div>
+                    <p class="text-sm text-[#5D534A]">geführte Expedition</p>
+                </div>
+                <div class="bg-[#F4A261]/30 p-6 rounded-lg shadow">
+                    <div class="text-5xl font-bold text-[#E76F51]">9+</div>
+                    <div class="text-xl font-semibold text-[#5D534A]">Level</div>
+                    <p class="text-sm text-[#5D534A]">voller Entdeckungen</p>
+                </div>
+                <div class="bg-[#E76F51]/30 p-6 rounded-lg shadow">
+                    <div class="text-5xl font-bold text-[#A8DADC]">✨</div>
+                    <div class="text-xl font-semibold text-[#5D534A]">KI-Impulse</div>
+                    <p class="text-sm text-[#5D534A]">mit Gemini API</p>
+                </div>
+            </div>
+            <p class="text-center text-md text-[#5D534A]">
+                Dieses interaktive SPA dient als digitaler Überblick und Begleiter zum physischen oder digitalen Logbuch. Es hilft dir, die Struktur und die Inhalte der einzelnen Wochen schnell zu erfassen.
+            </p>
+        </section>
+
+        <section id="teil1" class="content-card">
+            <h2 class="section-title">Teil 1: Start ins Abenteuer</h2>
+            <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
+                Bevor die Reise richtig losgeht, schaffen wir eine Grundlage. Dieser erste Teil hilft dir, dich auf das Programm einzustimmen und deinen aktuellen Standpunkt zu reflektieren.
+            </p>
+
+            <div>
+                <h3 class="subsection-title"><span class="icon-placeholder">📖</span>Folie 1: Titelfolie (Konzept)</h3>
+                <p>Die Reise beginnt mit deinem Namen und dem Versprechen einer spannenden Entwicklung: "Level Up Your Dreams – Dein persönliches Logbuch zur Traumkarriere".</p>
+                <div class="input-field-placeholder mt-2">[Dein Name hier eintragen]</div>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="subsection-title"><span class="icon-placeholder">👋</span>Folie 2: Willkommen an Bord!</h3>
+                <p class="mb-3">"Herzlich willkommen zu deiner persönlichen Traumjob-Expedition! Dieses Logbuch ist dein treuer Begleiter für die nächsten 10 Wochen. Hier hältst du deine Entdeckungen, Ideen, Pläne und Erfolge fest. Mach es zu DEINEM Buch!"</p>
+                <ul class="list-none space-y-2">
+                    <li class="flex items-start"><span class="text-2xl mr-3">🚀</span> Sei ehrlich zu dir selbst. Deine Gedanken und Gefühle sind hier richtig.</li>
+                    <li class="flex items-start"><span class="text-2xl mr-3">🌟</span> Sei mutig und denke groß. Trau dich, auch verrückte Ideen aufzuschreiben!</li>
+                    <li class="flex items-start"><span class="text-2xl mr-3">🎨</span> Sei kreativ – es gibt kein Richtig oder Falsch. Gestalte dein Logbuch, wie es dir gefällt.</li>
+                    <li class="flex items-start"><span class="text-2xl mr-3">🏆</span> Feiere deine Fortschritte, egal wie klein! Jeder Schritt zählt.</li>
+                </ul>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="subsection-title"><span class="icon-placeholder">📍</span>Folie 3: Mein Startpunkt – Wer bin ich heute?</h3>
+                <p>"Bevor die Reise richtig losgeht, halte kurz fest, wo du gerade stehst."</p>
+                <div class="space-y-4 mt-4">
+                    <div>
+                        <label class="font-semibold">Das bin ich (in 3 Worten, die mich gut beschreiben):</label>
+                        <div class="input-field-placeholder">[Schreibe hier deine 3 Worte]</div>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Meine aktuelle (Traum-)Vorstellung von meiner beruflichen Zukunft:</label>
+                        <div class="input-field-placeholder">[Beschreibe oder füge hier dein Bild ein]</div>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Was ich mir von dieser 'Level Up Your Dreams'-Reise erhoffe:</label>
+                        <div class="input-field-placeholder">[Schreibe hier deine Hoffnungen/Ziele]</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="teil2" class="content-card">
+            <h2 class="section-title">Teil 2: Die Wöchentlichen Level</h2>
+            <p class="text-center text-lg mb-6 max-w-3xl mx-auto">
+                Jede Woche ein neues Level! Entdecke deine Stärken, erkunde Berufsfelder, entwickle Zukunftsvisionen und plane konkrete Schritte. Wähle eine Woche aus, um die Details zu sehen:
+            </p>
+            <div id="weeklyLevelsTabs" class="flex flex-wrap justify-center border-b-2 border-gray-200 mb-6">
+                </div>
+            <div id="weeklyLevelsContent">
+                </div>
+        </section>
+
+        <section id="fokus" class="content-card">
+            <h2 class="section-title">Schwerpunkte des Programms</h2>
+            <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
+                "Level Up Your Dreams" ist so konzipiert, dass verschiedene Kernbereiche der persönlichen und beruflichen Entwicklung abgedeckt werden. Die folgende Grafik zeigt eine geschätzte Verteilung der Aktivitätsschwerpunkte über das gesamte Programm.
+            </p>
+            <div class="chart-container">
+                <canvas id="activityFocusChart"></canvas>
+            </div>
+            <p class="text-center text-sm mt-6 text-[#5D534A]">
+                Diese Verteilung unterstreicht den ganzheitlichen Ansatz des Programms, der sowohl die innere Arbeit (Selbstreflexion, Vision) als auch äußere Schritte (Recherche, Planung, Interaktion) berücksichtigt.
+            </p>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-10 border-t border-gray-200">
+        <p class="text-[#5D534A]">&copy; <span id="currentYear"></span> Level Up Your Dreams - Interaktiver Logbuch-Überblick.</p>
+        <p class="text-sm text-gray-500">Entwickelt zur Unterstützung deiner Karriere-Expedition.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        async function generateGeminiContent(promptText, outputElementId, loadingElementId) {
+            const outputElement = document.getElementById(outputElementId);
+            const loadingElement = document.getElementById(loadingElementId);
+
+            if (loadingElement) loadingElement.classList.remove('hidden');
+            if (outputElement) outputElement.textContent = '';
+
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            let chatHistory = [{ role: "user", parts: [{ text: promptText }] }];
+            const payload = { contents: chatHistory };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    throw new Error(`API Anfrage fehlgeschlagen mit Status ${response.status}`);
+                }
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    if (outputElement) outputElement.textContent = result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Ungültige Antwortstruktur von Gemini API:", result);
+                    if (outputElement) outputElement.textContent = "Entschuldigung, bei der Generierung der Antwort ist ein Fehler aufgetreten. Die Antwortstruktur war unerwartet.";
+                }
+            } catch (error) {
+                console.error("Fehler beim Aufruf der Gemini API:", error);
+                if (outputElement) outputElement.textContent = `Entschuldigung, bei der Anfrage an die Gemini API ist ein Fehler aufgetreten: ${error.message}. Bitte versuche es später erneut.`;
+            } finally {
+                if (loadingElement) loadingElement.classList.add('hidden');
+            }
+        }
+
+
+        const weeklyData = [
+            {
+                level: 1,
+                title: "Entdecke deine Superkräfte",
+                icon: "🦸",
+                intro: "In diesem Level gehst du auf Entdeckungsreise zu dir selbst. Du findest heraus, was dich einzigartig macht: deine Stärken, deine wichtigsten Werte und was dich wirklich begeistert.",
+                mission: [
+                    "Finde mindestens 3 deiner persönlichen Superkräfte (Stärken).",
+                    "Bestimme deine 3 wichtigsten Werte, die dir im Leben und im Job Orientierung geben.",
+                    "Gestalte eine Übersicht deiner größten Interessen."
+                ],
+                checkpoint: {
+                    title: "Bereit für die Selbstentdeckung?",
+                    fields: [
+                        { label: "Meine ersten Gedanken zum Thema 'Meine Stärken und Schwächen':", placeholder: "[Was fällt dir spontan ein?]" },
+                        { label: "(Warm-Up) Wenn ich eine Superkraft wählen könnte, wäre das", placeholder: "[Deine Wunsch-Superkraft], weil [Begründung eintragen]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Meine Superkräfte-Karte",
+                        instruction: "Jeder Mensch hat besondere Talente! Notiere hier 3-5 deiner Stärken. Denke darüber nach: Was kannst du gut? Wofür bekommst du Komplimente? Was macht dir Spaß und fällt dir leicht?",
+                        fields: [
+                            { id: "superkraft1", label: "Meine Superkraft 1:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]", gemini: true, geminiAction: "generateStrengthExamples", geminiButtonText: "✨ Stärke weiterdenken & Beispiele" },
+                            { id: "superkraft2", label: "Meine Superkraft 2:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]", gemini: true, geminiAction: "generateStrengthExamples", geminiButtonText: "✨ Stärke weiterdenken & Beispiele" },
+                            { id: "superkraft3", label: "Meine Superkraft 3:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]", gemini: true, geminiAction: "generateStrengthExamples", geminiButtonText: "✨ Stärke weiterdenken & Beispiele" }
+                        ]
+                    },
+                    {
+                        title: "Mein Werte-Kompass",
+                        instruction: "Werte sind wie ein innerer Kompass. Sie zeigen dir, was dir im Leben und auch später im Beruf wirklich wichtig ist. Wähle aus der gemeinsamen Werte-Liste im Workshop deine Top 3 aus und begründe deine Wahl.",
+                        fields: [
+                            { label: "Mein Wert 1:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" },
+                            { label: "Mein Wert 2:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" },
+                            { label: "Mein Wert 3:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" }
+                        ],
+                        icon: "🧭"
+                    },
+                    {
+                        title: "Meine Interessen-Welt",
+                        instruction: "Was begeistert dich? Womit beschäftigst du dich gerne in deiner Freizeit? Erstelle eine Collage (digital oder Screenshot einer analogen) oder eine Mindmap deiner Interessen.",
+                        fields: [
+                            { label: "Platzhalter für Collage/Mindmap oder Liste der Top-Interessen:", placeholder: "[Bild einfügen oder Interessen auflisten]" }
+                        ],
+                        icon: "🌍"
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Meine Schätze aus Level 1",
+                    icon: "💎",
+                    fields: [
+                        { label: "Mein größter 'Aha!'-Moment beim Entdecken meiner Stärken/Werte/Interessen war:", placeholder: "[Dein Aha-Moment]" },
+                        { label: "Diese neue Erkenntnis über mich selbst habe ich gewonnen:", placeholder: "[Deine Erkenntnis]" },
+                        { label: "Das nehme ich aus diesem Level mit für meine weitere Reise:", placeholder: "[Dein Learning]" }
+                    ],
+                    stamp: "[Level 1 gemeistert!]"
+                }
+            },
+            {
+                level: 2,
+                title: "Expedition in die Berufswelt",
+                icon: "🔭",
+                intro: "Jetzt geht's raus in den Dschungel der Berufe! Du schaust dir an, welche Traumjobs es gibt, was dich daran reizt und entdeckst vielleicht ganz neue, spannende Berufsfelder.",
+                mission: [
+                    "Erstelle einen Steckbrief für einen deiner Traumjobs.",
+                    "Recherchiere und präsentiere 2-3 Berufe, die du noch nicht kanntest oder die total ungewöhnlich sind.",
+                    "Diskutiere, was einen Job zu einem 'Traumjob' macht."
+                ],
+                checkpoint: {
+                    title: "Bereit für Job-Entdeckungen?",
+                    fields: [
+                        { label: "Mein aktueller Traumjob (oder einer davon) ist:", placeholder: "[Traumjob eintragen], weil [kurze Begründung]." },
+                        { label: "(Warm-Up) Wenn Berufe Superhelden wären, welcher Beruf wäre der coolste und warum?", placeholder: "[Deine kreative Antwort]." }
+                    ]
+                },
+                mission_logs: [
+                     {
+                        title: "Mein Traumjob-Steckbrief",
+                        instruction: "Wähle einen Beruf, der dich fasziniert. Recherchiere und fülle diesen Steckbrief aus.",
+                        fields: [
+                            { id: "traumjobBeruf", label: "Berufsbezeichnung:", placeholder: "[Eintragen]" },
+                            { id: "traumjobAufgaben", label: "Typische Aufgaben:", placeholder: "[Was macht man in diesem Beruf?]" },
+                            { label: "Das finde ich daran besonders spannend/anziehend:", placeholder: "[Deine Motivation]" },
+                            { label: "Welche meiner Stärken/Interessen passen zu diesem Beruf?", placeholder: "[Abgleich]" },
+                            { label: "Was müsste ich dafür lernen/studieren?", placeholder: "[Ausbildungsweg]" },
+                            { label: "Eine Sache, die mich an diesem Beruf überrascht hat:", placeholder: "[Überraschungsmoment]" }
+                        ],
+                        gemini: true, 
+                        geminiAction: "generateInterviewQuestions", 
+                        geminiButtonText: "✨ Mögliche Interviewfragen generieren",
+                        geminiInputIds: ["traumjobBeruf", "traumjobAufgaben"]
+                    },
+                    {
+                        title: "Entdeckungsreise – Unbekannte Berufe",
+                        instruction: "Es gibt so viele Berufe, von denen man noch nie gehört hat! Stelle hier 2-3 Berufe vor, die du im Workshop neu entdeckt hast oder die besonders ungewöhnlich/zukunftsträchtig sind. Was macht sie interessant?",
+                        fields: [
+                            { label: "Beruf 1: [Name des Berufs]", placeholder: "Kurzbeschreibung: [Was macht man da?] \nDas finde ich daran interessant/kurios: [Deine Gedanken]" },
+                            { label: "Beruf 2: [Name des Berufs]", placeholder: "Kurzbeschreibung: [Was macht man da?] \nDas finde ich daran interessant/kurios: [Deine Gedanken]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Neue Horizonte in Level 2",
+                    icon: "💡",
+                    fields: [
+                        { label: "Die überraschendste Entdeckung in der Berufswelt diese Woche war für mich:", placeholder: "[Deine Entdeckung]" },
+                        { label: "Ich habe gelernt, dass ein 'Traumjob' für mich bedeutet, dass er ...", placeholder: "[Deine Definition]" },
+                        { label: "Diese Erkenntnis hilft mir bei meiner weiteren Berufsorientierung:", placeholder: "[Dein Learning]" }
+                    ],
+                    stamp: "[Level 2 gemeistert!]"
+                }
+            },
+            {
+                level: 6,
+                title: "Mein Karriere-Fahrplan",
+                icon: "🗺️",
+                intro: "Eine Vision ist toll, aber wie kommst du dahin? In diesem Level erstellst du mit dem 'Career Canvas' einen ersten persönlichen Fahrplan für deinen Weg zum Traumjob.",
+                mission: [
+                    "Fülle dein persönliches 'Career Canvas' aus.",
+                    "Hole dir Feedback von deinen Mitschülern zu deinem Plan."
+                ],
+                checkpoint: {
+                    title: "Bereit zum Planen?",
+                    fields: [
+                        { label: "Einen Plan zu haben, ist für mich wichtig/manchmal schwierig, weil", placeholder: "[Deine Gedanken zum Planen]." },
+                        { label: "(Warm-Up) Wenn mein Karriereweg ein Fahrzeug wäre, dann ein", placeholder: "[Fahrzeug nennen], weil [Begründung]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Mein Karriere-Canvas",
+                        instruction: "Nutze die Vorlage aus dem Workshop, um dein Career Canvas auszufüllen.",
+                        fields: [
+                            { label: "Mein Ziel / Mein Traumjob:", placeholder: "[Was möchtest du erreichen?]" },
+                            { label: "Meine Motivation / Warum will ich das?", placeholder: "[Was treibt dich an?]" },
+                            { id: "karriereErsteSchritte", label: "Erste konkrete Schritte (Nächste 1-3 Monate):", placeholder: "[Was tust du als Erstes?]", gemini: true, geminiAction: "refineNextSteps", geminiButtonText: "✨ Nächste Schritte verfeinern" },
+                            { label: "Benötigte Fähigkeiten & Ressourcen:", placeholder: "[Was brauchst du dafür? (Skills, Wissen, Kontakte, Geld)]" },
+                            { label: "Meine Unterstützer (Personen, Netzwerke):", placeholder: "[Wer oder was kann dir helfen?]" },
+                            { label: "Mögliche Hindernisse & Herausforderungen:", placeholder: "[Was könnte schwierig werden?]" },
+                            { label: "Wie ich diese Hindernisse überwinden kann:", placeholder: "[Deine Lösungsansätze]" }
+                        ]
+                    },
+                    {
+                        title: "Feedback zu meinem Karriere-Canvas",
+                        instruction: "Tausche dich mit deinen Mitschülern über dein Career Canvas aus.",
+                        fields: [
+                            { label: "Das wichtigste Feedback, das ich bekommen habe:", placeholder: "[Feedback notieren]" },
+                            { label: "Das hat mich daran überrascht oder zum Nachdenken gebracht:", placeholder: "[Reflexion]" },
+                            { label: "Eine Sache, die ich aufgrund des Feedbacks an meinem Plan ändern/ergänzen möchte:", placeholder: "[Anpassung]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Kurs auf Zukunft in Level 6",
+                    icon: "🎯",
+                    fields: [
+                        { label: "Das Erstellen des Karriere-Canvas hat mir geholfen, ...", placeholder: "[Nutzen des Canvas für dich]" },
+                        { label: "Ein konkreter erster Schritt, den ich jetzt klarer sehe, ist:", placeholder: "[Dein erster Schritt]." },
+                        { label: "Ich habe gelernt, dass es beim Planen auch wichtig ist, ...", placeholder: "[z.B. flexibel zu bleiben, Unterstützung zu suchen]" }
+                    ],
+                    stamp: "[Level 6 gemeistert!]"
+                }
+            }
+        ];
+        // Other weekly data (3,4,5,7,8,9) would be structured similarly but omitted here for brevity
+        // and because Gemini features are focused on 1, 2, and 6 for this example.
+        // The full weeklyData array from the previous turn should be used if all weeks are to be displayed.
+        // For this example, I'm only including weeks 1, 2, and 6 to demonstrate Gemini integration.
+        // The actual application would have all 9 weeks.
+        const fullWeeklyData = [
+            // Woche 1 (as defined above with Gemini)
+            weeklyData[0],
+            // Woche 2 (as defined above with Gemini)
+            weeklyData[1],
+            // Woche 3 (original structure)
+            {
+                level: 3,
+                title: "Reise zu meinem Zukunfts-Ich",
+                icon: "⏳",
+                intro: "Stell dir vor, du reist in die Zukunft! In diesem Level entwickelst du eine Vision davon, wie dein Leben und dein Berufsalltag in etwa 10-15 Jahren aussehen könnten. Das hilft dir, deine Ziele klarer zu sehen.",
+                mission: [
+                    "Schreibe einen 'Brief aus der Zukunft' an dein heutiges Ich.",
+                    "Gestalte ein Vision Board (digital oder analog) für dein Leben im Jahr 2035."
+                ],
+                checkpoint: {
+                    title: "Bereit für die Zeitreise?",
+                    fields: [
+                        { label: "Wenn ich an meine Zukunft in 10 Jahren denke, fühle ich mich:", placeholder: "[Deine Gefühle eintragen]." },
+                        { label: "(Warm-Up) Male oder beschreibe in 3 Worten deinen idealen Arbeitsplatz der Zukunft:", placeholder: "[Deine kreative Antwort]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Brief aus meiner Zukunft (2035)",
+                        instruction: "Stell dir vor, es ist das Jahr 2035. Du bist erfolgreich und zufrieden in deinem Beruf. Schreibe einen Brief an dein heutiges Ich. Erzähle von deinem Alltag, deinem Job, was dich glücklich macht, welche Herausforderungen du gemeistert hast und gib deinem jüngeren Ich einen Rat.",
+                        fields: [ { label: "Liebes [Dein Name] von heute, ...", placeholder: "[Dein Brief hier]" } ],
+                        icon: "✉️"
+                    },
+                    {
+                        title: "Mein Vision Board 2035",
+                        instruction: "Ein Vision Board ist eine Collage aus Bildern, Worten und Symbolen, die deine Ziele und Träume für die Zukunft darstellen. Gestalte dein Vision Board für das Jahr 2035 (digital oder analog und füge ein Foto ein). Welche Bilder und Worte repräsentieren dein Wunschleben?",
+                        fields: [
+                            { label: "Platzhalter für Vision Board (Bild/Screenshot):", placeholder: "[Bild hier einfügen]" },
+                            { label: "Diese 3 Elemente auf meinem Vision Board sind mir besonders wichtig, weil:", placeholder: "[Begründung]" }
+                        ],
+                        icon: "🖼️"
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Meine Zukunftsvision aus Level 3",
+                    icon: "🌠",
+                    fields: [
+                        { label: "Das Schreiben des Zukunftsbriefs / Gestalten des Vision Boards hat mir gezeigt, dass ...", placeholder: "[Deine Erkenntnis]" },
+                        { label: "Eine wichtige Eigenschaft meines 'Zukunfts-Ichs', die ich entwickeln möchte, ist:", placeholder: "[Eigenschaft nennen]" },
+                        { label: "Meine Vision für 2035 motiviert mich, weil ...", placeholder: "[Deine Motivation]" }
+                    ],
+                    stamp: "[Level 3 gemeistert!]"
+                }
+            },
+            // Woche 4 (original structure)
+             {
+                level: 4,
+                title: "Berufe Live – Profis im Interview",
+                icon: "🎤",
+                intro: "Theorie ist gut, Praxis ist besser! In diesem Level bereitest du Interviews mit echten Berufstätigen vor und führst sie (oder analysierst bestehende Interviews). Du bekommst so authentische Einblicke in den Berufsalltag.",
+                mission: [
+                    "Entwickle gute Interviewfragen für einen Berufstätigen.",
+                    "Führe ein (Video-)Interview oder werte ein ausführliches YouTube-Berufsinterview aus.",
+                    "Erstelle eine kurze 'Job-Reportage' (z.B. als Steckbrief oder Mini-Poster)."
+                ],
+                checkpoint: {
+                    title: "Bereit für echte Einblicke?",
+                    fields: [
+                        { label: "Einen Profi aus dem Bereich [Berufsbereich nennen] würde ich gerne mal interviewen, weil", placeholder: "[Begründung]." },
+                        { label: "(Warm-Up) Die drei wichtigsten Fragen, die ich einem Profi zu seinem Job stellen würde, sind:", placeholder: "1. [Frage] 2. [Frage] 3. [Frage]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Mein Interview-Leitfaden",
+                        instruction: "Gute Vorbereitung ist alles! Notiere hier die Fragen, die du einem Berufstätigen stellen möchtest. Denke an verschiedene Bereiche: Aufgaben, Alltag, Ausbildungsweg, positive/negative Seiten, Tipps für Einsteiger.",
+                        fields: [
+                            { label: 'Einstieg:', placeholder: '"Wie sind Sie zu diesem Beruf gekommen?"' },
+                            { label: 'Alltag:', placeholder: '"Wie sieht ein typischer Arbeitstag bei Ihnen aus?"' },
+                            { label: 'Herausforderungen:', placeholder: '"Was sind die größten Herausforderungen in Ihrem Beruf?"' },
+                            { label: 'Schöne Seiten:', placeholder: '"Was lieben Sie an Ihrer Arbeit am meisten?"' },
+                            { label: 'Ausbildung:', placeholder: '"Welchen Ausbildungsweg würden Sie heute empfehlen?"' },
+                            { label: 'Tipps:', placeholder: '"Welchen Rat haben Sie für Jugendliche, die sich für diesen Beruf interessieren?"' },
+                            { label: 'Deine eigenen Fragen:', placeholder: '[Füge hier deine spezifischen Fragen ein]' }
+                        ]
+                    },
+                    {
+                        title: "Meine Interview-Erkenntnisse / Job-Reportage",
+                        instruction: "Fasse hier die wichtigsten Erkenntnisse aus deinem Interview zusammen oder gestalte eine Mini-Job-Reportage.",
+                        fields: [
+                            { label: "Interviewte Person / Beruf:", placeholder: "[Name, Beruf]" },
+                            { label: "Die spannendste Aussage/Erkenntnis für mich war:", placeholder: "[Deine Top-Erkenntnis]" },
+                            { label: "Das hat mich am meisten überrascht:", placeholder: "[Überraschungsmoment]" },
+                            { label: "Das Bild dieses Berufs hat sich für mich so verändert:", placeholder: "[Veränderung deiner Vorstellung]" },
+                            { label: "Würde dieser Beruf zu mir passen? (Ja/Nein/Vielleicht) Begründung:", placeholder: "[Deine Einschätzung]" },
+                            { label: "Optionaler Screenshot der Job-Reportage:", placeholder: "[Bild einfügen]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Realitätscheck in Level 4 bestanden",
+                    icon: "🔍",
+                    fields: [
+                        { label: "Durch das Interview habe ich über den Beruf [Berufsname] gelernt, dass ...", placeholder: "[Wichtige neue Info]" },
+                        { label: "Eine Fähigkeit, die für diesen Beruf wichtig ist und die ich auch gerne hätte/stärken möchte, ist:", placeholder: "[Fähigkeit nennen]" },
+                        { label: "Diese Woche hat mir geholfen zu verstehen, wie wichtig es ist, ...", placeholder: "[z.B. Fragen zu stellen, hinter die Kulissen zu schauen]" }
+                    ],
+                    stamp: "[Level 4 gemeistert!]"
+                }
+            },
+            // Woche 5 (original structure)
+            {
+                level: 5,
+                title: "Skill Up! – Entdecke deine Fähigkeiten",
+                icon: "🛠️",
+                intro: "Jeder Job erfordert bestimmte Fähigkeiten – manche lernt man in der Ausbildung (Hard Skills), andere bringt man mit oder entwickelt sie im Umgang mit anderen (Soft Skills). In diesem Level erlebst du deine Skills in Aktion und lernst sie besser kennen.",
+                mission: [
+                    "Nimm an einer 'Skill-Challenge' im Team teil.",
+                    "Reflektiere, welche deiner Skills dabei zum Einsatz kamen.",
+                    "Erstelle eine persönliche 'Skill-Map' für einen deiner Traumjobs."
+                ],
+                checkpoint: {
+                    title: "Bereit, deine Skills zu zeigen?",
+                    fields: [
+                        { label: "Eine Fähigkeit, auf die ich stolz bin, ist:", placeholder: "[Deine Fähigkeit]." },
+                        { label: "(Warm-Up) Wenn meine Teamfähigkeit eine Farbe hätte, wäre sie", placeholder: "[Farbe nennen], weil [Begründung]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Meine Skill-Challenge-Reflexion",
+                        instruction: "Denke an die Skill-Challenge aus dem Workshop. Welche Aufgabe hattet ihr? Wie habt ihr sie im Team gelöst? Welche deiner Fähigkeiten waren dabei besonders gefragt?",
+                        fields: [
+                            { label: "Unsere Challenge war:", placeholder: "[Kurze Beschreibung der Aufgabe]" },
+                            { label: "Diese Skills habe ich bei mir eingesetzt:", placeholder: "[z.B. Kreativität, Organisation, Kommunikation, Problemlösung, Teamarbeit – mit Beispielen]" },
+                            { label: "Das ist mir dabei leichtgefallen:", placeholder: "[Was gut lief]" },
+                            { label: "Das war eine Herausforderung für mich/uns:", placeholder: "[Schwierigkeiten]" },
+                            { label: "Was ich aus der Teamarbeit gelernt habe:", placeholder: "[Learning Teamwork]" }
+                        ]
+                    },
+                    {
+                        title: "Meine Skill-Map für den Traumjob",
+                        instruction: "Wähle einen deiner Traumjobs. Welche Fähigkeiten (Hard Skills & Soft Skills) braucht man dafür? Welche davon bringst du schon mit? Welche möchtest du noch entwickeln oder verbessern?",
+                        fields: [
+                            { label: "Mein Traumjob:", placeholder: "[Name des Traumjobs]" },
+                            { label: "Benötigte Skills für diesen Job:", placeholder: "(Hard Skill 1, Hard Skill 2, Soft Skill 1, Soft Skill 2, etc. with examples)" },
+                            { label: "Meine aktuellen Skills, die dazu passen:", placeholder: "(Skill 1 you already have, Skill 2 you already have, etc.)" },
+                            { label: "Skills, die ich noch entwickeln/verbessern möchte:", placeholder: "(Skill 1 you want to learn, Skill 2 you want to learn, etc.)" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Fähigkeiten-Boost in Level 5",
+                    icon: "👍",
+                    fields: [
+                        { label: "Ich war überrascht, dass ich bei der Skill-Challenge gut darin war, ...", placeholder: "[Positive Überraschung]" },
+                        { label: "Der Unterschied zwischen Soft Skills und Hard Skills ist mir jetzt klarer. Ein wichtiger Soft Skill für fast jeden Beruf ist meiner Meinung nach:", placeholder: "[Soft Skill nennen]." },
+                        { label: "Ich nehme mir vor, an folgendem Skill gezielt zu arbeiten:", placeholder: "[Skill nennen], indem ich [konkrete Idee zur Verbesserung]." }
+                    ],
+                    stamp: "[Level 5 gemeistert!]"
+                }
+            },
+            // Woche 6 (as defined above with Gemini)
+            weeklyData[2],
+            // Woche 7 (original structure)
+            {
+                level: 7,
+                title: "Netzwerk-Booster – Kontakte knüpfen",
+                icon: "�",
+                intro: "Niemand erreicht seine Ziele allein! In diesem Level entdeckst du die Kraft von Netzwerken. Du überlegst, wer dir auf deinem Weg helfen könnte und wie du professionell Kontakt aufnimmst.",
+                mission: [
+                    "Visualisiere dein aktuelles persönliches Netzwerk.",
+                    "Formuliere eine professionelle E-Mail-Anfrage für ein Praktikum oder ein Informationsgespräch.",
+                    "Übe die Kontaktaufnahme in Rollenspielen."
+                ],
+                checkpoint: {
+                    title: "Bereit zum Netzwerken?",
+                    fields: [
+                        { label: "Das Wort 'Netzwerken' bedeutet für mich:", placeholder: "[Deine Definition]." },
+                        { label: "(Warm-Up) Wenn ich eine berühmte Persönlichkeit um Rat fragen könnte, wäre das", placeholder: "[Name der Person], und ich würde fragen: [Deine Frage]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Meine Netzwerk-Karte",
+                        instruction: "Wer gehört schon jetzt zu deinem Netzwerk? Denke an Familie, Freunde, Lehrer, Trainer, Nachbarn etc. Erstelle eine Mindmap oder eine Liste. Überlege auch, wer davon dir vielleicht bei deiner Berufsorientierung helfen könnte.",
+                        fields: [
+                            { label: "Platzhalter für Mindmap/Liste deiner Kontakte:", placeholder: "[Mindmap/Liste hier erstellen oder einfügen]" },
+                            { label: "Eine Person aus meinem Netzwerk, die mir vielleicht schon jetzt helfen könnte, ist:", placeholder: "[Name und wie die Person helfen könnte]" }
+                        ]
+                    },
+                    {
+                        title: "Meine Profi-Anfrage (E-Mail-Entwurf)",
+                        instruction: "Formuliere hier den Entwurf einer höflichen und professionellen E-Mail. Stell dir vor, du möchtest dich für ein kurzes Praktikum bewerben oder um ein Informationsgespräch zu einem Beruf bitten.",
+                        fields: [
+                            { label: "Betreff:", placeholder: "[Klarer Betreff, z.B. Anfrage Schulpraktikum [Dein Name]]" },
+                            { label: "Anrede:", placeholder: "[Sehr geehrte/r Herr/Frau ...,]" },
+                            { label: "Einleitung:", placeholder: "[Wer bist du? Warum schreibst du?]" },
+                            { label: "Hauptteil:", placeholder: "[Was ist dein Anliegen? Warum diese Firma/Person?]" },
+                            { label: "Schluss:", placeholder: "[Bitte um Rückmeldung, Dank, Grußformel]" },
+                            { label: "Deine Unterschrift:", placeholder: "[Dein Name, Klasse, Schule, ggf. Telefonnummer]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Kontakte geknüpft in Level 7",
+                    icon: "🤝",
+                    fields: [
+                        { label: "Mir ist klar geworden, dass Netzwerken bedeutet, ...", placeholder: "[Deine neue Einsicht zum Netzwerken]" },
+                        { label: "Beim Formulieren der E-Mail war es für mich wichtig/schwierig, auf ...", placeholder: "[Aspekt des E-Mail-Schreibens] zu achten." },
+                        { label: "Ich nehme mir vor, mutiger auf Menschen zuzugehen, indem ich ...", placeholder: "[Konkreter Vorsatz]" }
+                    ],
+                    stamp: "[Level 7 gemeistert!]"
+                }
+            },
+            // Woche 8 (original structure)
+            {
+                level: 8,
+                title: "Realitäts-Check & Plan B",
+                icon: "🛣️",
+                intro: "Jetzt wird's praktisch! Du recherchierst, welche konkreten Ausbildungswege oder Studiengänge zu deinen Traumjobs führen und welche Voraussetzungen du dafür brauchst. Außerdem ist es immer gut, einen Plan B (oder C) in der Tasche zu haben!",
+                mission: [
+                    "Recherchiere detailliert den Ausbildungsweg für einen deiner favorisierten Berufe.",
+                    "Entwickle einen Plan B und vielleicht sogar einen Plan C für deine berufliche Zukunft.",
+                    "Erstelle einen Zeitplan für deine nächsten konkreten Schritte (z.B. Bewerbungen, Infotage)."
+                ],
+                checkpoint: {
+                    title: "Bereit für konkrete Fakten?",
+                    fields: [
+                        { label: "Wenn ich an Bewerbungen und Auswahlverfahren denke, fühle ich mich:", placeholder: "[Deine Gefühle]." },
+                        { label: "(Warm-Up) Der Unterschied zwischen einer Ausbildung und einem Studium ist für mich (vereinfacht gesagt):", placeholder: "[Deine Erklärung]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Mein Wegweiser zum Traumjob",
+                        instruction: "Wähle einen deiner Traumjobs. Recherchiere online (z.B. auf Berufenet, Ausbildungsportalen, Hochschulwebseiten) die folgenden Punkte:",
+                        fields: [
+                            { label: "Traumjob:", placeholder: "[Name des Berufs]" },
+                            { label: "Möglicher Ausbildungsweg/Studiengang:", placeholder: "[Genaue Bezeichnung]" },
+                            { label: "Dauer der Ausbildung/des Studiums:", placeholder: "[Wie lange dauert es?]" },
+                            { label: "Wichtige Voraussetzungen (Schulabschluss, Noten, Fähigkeiten):", placeholder: "[Was wird gefordert?]" },
+                            { label: "Typische Lerninhalte/Studienfächer:", placeholder: "[Was lernt man konkret?]" },
+                            { label: "Wo kann ich das machen (Beispielorte/Firmen/Hochschulen):", placeholder: "[Beispiele nennen]" },
+                            { label: "Eine wichtige Infoquelle für meine Recherche war:", placeholder: "[Webseite/Quelle nennen]" }
+                        ]
+                    },
+                    {
+                        title: "Mein Plan B (und C)",
+                        instruction: "Manchmal läuft es nicht wie geplant, oder Interessen ändern sich. Was wären gute Alternativen, falls dein Plan A nicht sofort klappt oder du dich umentscheidest? Skizziere hier 1-2 alternative berufliche Ziele oder Wege.",
+                        fields: [
+                            { label: "Mein Plan B:", placeholder: "(Berufliches Ziel/Richtung, Warum gute Option, Erste Schritte)" },
+                            { label: "Mein Plan C (optional):", placeholder: "(Berufliches Ziel/Richtung, Warum gute Option, Erste Schritte)" }
+                        ]
+                    },
+                    {
+                        title: "Mein Zeitplan für die nächsten Schritte",
+                        instruction: "Was sind deine ganz konkreten nächsten To-Dos auf dem Weg zur Berufsorientierung oder Bewerbung? Trage hier wichtige Termine und Aufgaben ein.",
+                        fields: [
+                            { label: "Bis Ende [Monat/Jahr]:", placeholder: "[Aufgabe 1, z.B. Anmeldung Tag der offenen Tür]" },
+                            { label: "Bis Ende [Monat/Jahr]:", placeholder: "[Aufgabe 2, z.B. Bewerbungsunterlagen zusammenstellen]" },
+                            { label: "Langfristiges To-Do:", placeholder: "[Aufgabe 3, z.B. Noten verbessern]" },
+                            { label: "Weitere Termine/Aufgaben:", placeholder: "[Weitere Einträge]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: {
+                    title: "Level Up! Konkrete Pläne in Level 8 geschmiedet",
+                    icon: "✔️",
+                    fields: [
+                        { label: "Die Recherche zum Ausbildungsweg hat mir gezeigt, dass ...", placeholder: "[Wichtige Erkenntnis zur Ausbildung/Studium]" },
+                        { label: "Einen Plan B zu haben, gibt mir das Gefühl von ...", placeholder: "[Dein Gefühl dazu]." },
+                        { label: "Ich habe gelernt, dass es bei der Berufswahl wichtig ist, nicht nur vom Traum zu schwärmen, sondern auch ...", placeholder: "[z.B. die Fakten zu checken, realistisch zu sein]." }
+                    ],
+                    stamp: "[Level 8 gemeistert!]"
+                }
+            },
+            // Woche 9 (original structure)
+            {
+                level: 9,
+                title: "Showtime! – Bereite deine Präsentation vor",
+                icon: "🌟",
+                intro: "Du hast in den letzten Wochen so viel über dich und deine beruflichen Ziele gelernt! In diesem Level bereitest du eine kurze Präsentation deiner 'Level Up Your Dreams'-Reise vor. Zeig den anderen, was du entdeckt hast und was deine Pläne sind.",
+                mission: [
+                    "Strukturiere deine Abschlusspräsentation (Wer bin ich? Was ist mein Traum? Wie will ich ihn erreichen?).",
+                    "Gestalte die wichtigsten Inhalte deiner Präsentation (z.B. als Stichpunkte für Folien).",
+                    "Übe deine Präsentation und hole dir Feedback."
+                ],
+                checkpoint: {
+                    title: "Bereit für die Bühne?",
+                    fields: [
+                        { label: "Vor anderen zu präsentieren, ist für mich:", placeholder: "[Deine Gefühle zum Präsentieren]." },
+                        { label: "(Warm-Up) Wenn meine berufliche Zukunft ein Filmtitel wäre, dann hieße er:", placeholder: "[Dein kreativer Filmtitel]." }
+                    ]
+                },
+                mission_logs: [
+                    {
+                        title: "Mein Präsentations-Storyboard",
+                        instruction: "Plane hier den Ablauf und die wichtigsten Inhalte deiner Abschlusspräsentation. Was möchtest du auf jeden Fall erzählen? Welche Bilder oder Beispiele willst du zeigen?",
+                        fields: [
+                            { label: "Folie/Abschnitt 1: Titelfolie & Vorstellung", placeholder: "(Mein Name, mein Motto für die Zukunft: [Stichpunkte])" },
+                            { label: "Folie/Abschnitt 2: Meine Reise – Startpunkt & Entdeckungen", placeholder: "(Meine wichtigsten Stärken/Interessen: [Stichpunkte], Mein ursprünglicher Traumjob vs. neue Entdeckungen: [Stichpunkte])" },
+                            { label: "Folie/Abschnitt 3: Mein Traumziel & Vision", placeholder: "(Mein aktueller Traumjob/mein berufliches Ziel: [Stichpunkte], Meine Vision für 2035 (kurz): [Stichpunkte oder Bild vom Vision Board])" },
+                            { label: "Folie/Abschnitt 4: Mein Plan – Die nächsten Schritte", placeholder: "(Mein Karriere-Canvas (wichtigste Punkte): [Stichpunkte], Meine konkreten nächsten 1-2 Schritte: [Stichpunkte])" },
+                            { label: "Folie/Abschnitt 5: Was ich gelernt habe & Abschluss", placeholder: "(Meine wichtigste Erkenntnis aus dem Programm: [Stichpunkte], Ein Dankeschön oder ein motivierender Schlusssatz: [Stichpunkte])" }
+                        ]
+                    },
+                    {
+                        title: "Feedback zu meiner Präsentation",
+                        instruction: "Nachdem du deine Präsentation (oder Teile davon) im Workshop geübt hast: Welches Feedback hast du bekommen? Was möchtest du für die finale Präsentation ändern oder verbessern?",
+                        fields: [
+                            { label: "Das hilfreichste Feedback, das ich erhalten habe, war:", placeholder: "[Feedback notieren]" },
+                            { label: "Eine Sache, die ich aufgrund des Feedbacks an meiner Präsentation ändern/verbessern möchte:", placeholder: "[Anpassung]" },
+                            { label: "Das gibt mir für die Präsentation Selbstvertrauen:", placeholder: "[Positive Aspekte]" }
+                        ]
+                    }
+                ],
+                skill_unlocked: { 
+                    title: "Level Up! Bereit für Showtime in Level 9",
+                    icon: "🎬",
+                    fields: [
+                        { label: "Die Vorbereitung meiner Präsentation hat mir geholfen, ...", placeholder: "[Deine Erkenntnis]" },
+                        { label: "Ich fühle mich jetzt sicherer darin, ...", placeholder: "[Bereich des Selbstvertrauens]" },
+                        { label: "Mein wichtigster Tipp für eine gute Präsentation ist ...", placeholder: "[Dein Tipp]" }
+                    ],
+                    stamp: "[Level 9 gemeistert!]"
+                }
+            }
+        ];
+
+
+        const tabsContainer = document.getElementById('weeklyLevelsTabs');
+        const contentContainer = document.getElementById('weeklyLevelsContent');
+
+        fullWeeklyData.forEach((week, index) => {
+            const tabButton = document.createElement('button');
+            tabButton.className = 'tab-button';
+            tabButton.textContent = `Woche ${week.level}`;
+            tabButton.setAttribute('data-level', week.level);
+
+            const weekContent = document.createElement('div');
+            weekContent.id = `level-${week.level}-content`;
+            weekContent.className = 'level-content hidden p-1 md:p-4 border border-gray-200 rounded-b-lg';
+            
+            let missionLogsHTML = '';
+            if (week.mission_logs) {
+                week.mission_logs.forEach((log, logIndex) => {
+                    let geminiButtonHTML = '';
+                    let geminiOutputHTML = '';
+                    let loadingIndicatorHTML = '';
+
+                    if (log.gemini) { // For logs that have a single Gemini button at the end of the log
+                        const buttonId = `gemini-btn-log-${week.level}-${logIndex}`;
+                        const outputId = `gemini-output-log-${week.level}-${logIndex}`;
+                        const loadingId = `loading-log-${week.level}-${logIndex}`;
+                        geminiButtonHTML = `<button id="${buttonId}" class="gemini-button">${log.geminiButtonText}</button>`;
+                        geminiOutputHTML = `<div id="${outputId}" class="gemini-output hidden"></div>`;
+                        loadingIndicatorHTML = `<div id="${loadingId}" class="loading-indicator hidden">Wird generiert...</div>`;
+                    }
+
+                    missionLogsHTML += `<div class="mb-6 p-4 bg-sky-50 rounded-lg">
+                        <h5 class="text-xl font-semibold text-[#A8DADC] mb-2">${log.icon || '📝'} ${log.title}</h5>
+                        <p class="text-sm text-gray-600 mb-3">${log.instruction}</p>
+                        ${log.fields.map((f, fieldIndex) => {
+                            let fieldGeminiHTML = '';
+                            if (f.gemini) { // For individual fields within a log
+                                const fieldButtonId = `gemini-btn-field-${week.level}-${logIndex}-${fieldIndex}`;
+                                const fieldOutputId = `gemini-output-field-${week.level}-${logIndex}-${fieldIndex}`;
+                                const fieldLoadingId = `loading-field-${week.level}-${logIndex}-${fieldIndex}`;
+                                fieldGeminiHTML = `
+                                    <button id="${fieldButtonId}" class="gemini-button">${f.geminiButtonText}</button>
+                                    <div id="${fieldLoadingId}" class="loading-indicator hidden">Wird generiert...</div>
+                                    <div id="${fieldOutputId}" class="gemini-output hidden"></div>
+                                `;
+                            }
+                            return `
+                                <div class="mb-2">
+                                    <label for="field-${week.level}-${logIndex}-${fieldIndex}" class="font-medium text-sm text-gray-700">${f.label}</label>
+                                    <div id="field-${week.level}-${logIndex}-${fieldIndex}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                    ${fieldGeminiHTML}
+                                </div>`;
+                        }).join('')}
+                        ${geminiButtonHTML}
+                        ${loadingIndicatorHTML}
+                        ${geminiOutputHTML}
+                    </div>`;
+                });
+            }
+            
+            let checkpointHTML = '';
+            if (week.checkpoint) {
+                 checkpointHTML = `<div class="mb-6 p-4 bg-orange-50 rounded-lg">
+                    <h4 class="text-xl font-semibold text-[#F4A261] mb-3"><span class="icon-placeholder">🏁</span>Checkpoint: ${week.checkpoint.title}</h4>
+                    ${week.checkpoint.fields.map(f => `
+                        <div class="mb-2">
+                            <label class="font-medium text-sm text-gray-700">${f.label}</label>
+                            <div class="input-field-placeholder text-sm">${f.placeholder}</div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+
+            let skillUnlockedHTML = '';
+            if (week.skill_unlocked) {
+                skillUnlockedHTML = `<div class="mt-6 p-4 bg-emerald-50 rounded-lg">
+                    <h4 class="text-xl font-semibold text-emerald-500 mb-3">${week.skill_unlocked.icon || '🏆'} ${week.skill_unlocked.title}</h4>
+                     ${week.skill_unlocked.fields.map(f => `
+                        <div class="mb-2">
+                            <label class="font-medium text-sm text-gray-700">${f.label}</label>
+                            <div class="input-field-placeholder text-sm">${f.placeholder}</div>
+                        </div>
+                    `).join('')}
+                    ${week.skill_unlocked.stamp ? `<p class="mt-3 font-bold text-emerald-600 text-center">${week.skill_unlocked.stamp}</p>` : ''}
+                </div>`;
+            }
+
+            weekContent.innerHTML = `
+                <div class="p-2 md:p-6">
+                    <h3 class="text-3xl font-bold text-[#E76F51] mb-2"><span class="text-4xl">${week.icon || '🗓️'}</span> Level ${week.level}: ${week.title}</h3>
+                    <p class="text-gray-600 mb-4">${week.intro}</p>
+                    <div class="mb-6 p-4 bg-rose-50 rounded-lg">
+                        <h4 class="text-xl font-semibold text-rose-500 mb-3">🎯 Mission für diese Woche:</h4>
+                        <ul class="list-none mission-list space-y-1 text-gray-700">
+                            ${week.mission.map(m => `<li>${m}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ${checkpointHTML}
+                    <h4 class="text-2xl font-semibold text-[#A8DADC] my-4 text-center">Mission Logs</h4>
+                    ${missionLogsHTML}
+                    ${skillUnlockedHTML}
+                </div>
+            `;
+
+            tabsContainer.appendChild(tabButton);
+            contentContainer.appendChild(weekContent);
+
+            tabButton.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.level-content').forEach(content => content.classList.add('hidden'));
+                tabButton.classList.add('active');
+                document.getElementById(`level-${week.level}-content`).classList.remove('hidden');
+            });
+
+            if (index === 0) { 
+                tabButton.classList.add('active');
+                weekContent.classList.remove('hidden');
+            }
+        });
+
+        // Add event listeners for Gemini buttons after content is rendered
+        fullWeeklyData.forEach((week, weekIndex) => {
+            if (week.mission_logs) {
+                week.mission_logs.forEach((log, logIndex) => {
+                    if (log.gemini) { // For logs with a single Gemini button
+                        const buttonId = `gemini-btn-log-${week.level}-${logIndex}`;
+                        const outputId = `gemini-output-log-${week.level}-${logIndex}`;
+                        const loadingId = `loading-log-${week.level}-${logIndex}`;
+                        const geminiButton = document.getElementById(buttonId);
+                        if (geminiButton) {
+                            geminiButton.addEventListener('click', async () => {
+                                document.getElementById(outputId)?.classList.remove('hidden');
+                                let promptText = "";
+                                if (log.geminiAction === "generateInterviewQuestions") {
+                                    const beruf = document.getElementById(`field-${week.level}-${logIndex}-0`)?.textContent.replace("[Eintragen]", "").trim() || "einem interessanten Beruf";
+                                    const aufgaben = document.getElementById(`field-${week.level}-${logIndex}-1`)?.textContent.replace("[Was macht man in diesem Beruf?]", "").trim() || "typischen Aufgaben";
+                                    promptText = `Generiere 3-5 prägnante und relevante Interviewfragen, die ein Bewerber einem Arbeitgeber stellen könnte, oder die ein Arbeitgeber einem Bewerber stellen könnte, für den Beruf "${beruf}" mit typischen Aufgaben wie "${aufgaben}". Antworte auf Deutsch.`;
+                                }
+                                if (promptText) {
+                                    await generateGeminiContent(promptText, outputId, loadingId);
+                                }
+                            });
+                        }
+                    }
+                    log.fields.forEach((field, fieldIndex) => {
+                        if (field.gemini) { // For individual fields with Gemini buttons
+                            const fieldButtonId = `gemini-btn-field-${week.level}-${logIndex}-${fieldIndex}`;
+                            const fieldOutputId = `gemini-output-field-${week.level}-${logIndex}-${fieldIndex}`;
+                            const fieldLoadingId = `loading-field-${week.level}-${logIndex}-${fieldIndex}`;
+                            const fieldInputDivId = `field-${week.level}-${logIndex}-${fieldIndex}`;
+                            const geminiButton = document.getElementById(fieldButtonId);
+
+                            if (geminiButton) {
+                                geminiButton.addEventListener('click', async () => {
+                                    document.getElementById(fieldOutputId)?.classList.remove('hidden');
+                                    const userInputDiv = document.getElementById(fieldInputDivId);
+                                    const userInput = userInputDiv?.textContent.replace(field.placeholder, "").trim();
+                                    let promptText = "";
+
+                                    if (field.geminiAction === "generateStrengthExamples" && userInput) {
+                                        promptText = `Meine Stärke ist "${userInput}". Gib mir 2-3 konkrete Beispiele, wie ich diese Stärke im Berufsleben einsetzen kann oder in welchen Rollen sie besonders wertvoll ist. Antworte auf Deutsch und formuliere es als direkte Ratschläge oder Ideen.`;
+                                    } else if (field.geminiAction === "refineNextSteps" && userInput) {
+                                        promptText = `Meine nächsten konkreten Schritte sind: "${userInput}". Gib mir detailliertere Vorschläge oder unterteile diese Schritte weiter in kleinere, handhabbare Aufgaben. Formuliere 2-3 konkrete, weiterführende Ideen. Antworte auf Deutsch.`;
+                                    }
+                                    
+                                    if (promptText) {
+                                       await generateGeminiContent(promptText, fieldOutputId, fieldLoadingId);
+                                    } else if (!userInput && (field.geminiAction === "generateStrengthExamples" || field.geminiAction === "refineNextSteps")) {
+                                        const outputElem = document.getElementById(fieldOutputId);
+                                        if (outputElem) {
+                                            outputElem.textContent = "Bitte gib zuerst deine Stärke / deine Schritte in das Textfeld ein.";
+                                            outputElem.classList.remove('hidden');
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Make input-field-placeholder divs editable and handle placeholder behavior
+        document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
+            const placeholderText = div.dataset.placeholder;
+            if (div.textContent === placeholderText) {
+                div.style.color = '#6c757d'; // Placeholder color
+            }
+
+            div.addEventListener('focus', () => {
+                if (div.textContent === placeholderText) {
+                    div.textContent = '';
+                    div.style.color = '#5D534A'; // Normal text color
+                }
+            });
+            div.addEventListener('blur', () => {
+                if (div.textContent.trim() === '') {
+                    div.textContent = placeholderText;
+                    div.style.color = '#6c757d'; // Placeholder color
+                }
+            });
+        });
+        
+        // Smooth scroll for nav links
+        document.querySelectorAll('#mainNav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const offsetTop = targetElement.offsetTop - document.getElementById('mainNav').offsetHeight - 20; 
+                     window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        const activityFocusCtx = document.getElementById('activityFocusChart').getContext('2d');
+        
+        function wrapChartLabels(labels, maxWidth) {
+            return labels.map(label => {
+                if (typeof label === 'string' && label.length > maxWidth) {
+                    const words = label.split(' ');
+                    let currentLine = '';
+                    const newLabel = [];
+                    words.forEach(word => {
+                        if ((currentLine + word).length > maxWidth && currentLine.length > 0) {
+                            newLabel.push(currentLine.trim());
+                            currentLine = word + ' ';
+                        } else {
+                            currentLine += word + ' ';
+                        }
+                    });
+                    if (currentLine.trim().length > 0) {
+                         newLabel.push(currentLine.trim());
+                    }
+                    return newLabel;
+                }
+                return label;
+            });
+        }
+
+        const activityData = {
+            labels: wrapChartLabels([
+                'Selbstreflexion & Analyse', 
+                'Recherche & Exploration', 
+                'Kreative Gestaltung & Vision', 
+                'Planung & Strukturierung', 
+                'Interaktion & Feedback'
+            ], 16), 
+            datasets: [{
+                label: 'Aktivitätsschwerpunkte',
+                data: [30, 20, 20, 20, 10], 
+                backgroundColor: [
+                    '#A8DADC', 
+                    '#F4A261', 
+                    '#E76F51', 
+                    '#2A9D8F', 
+                    '#E9C46A'  
+                ],
+                borderColor: '#FAF8F5', 
+                borderWidth: 3,
+                hoverOffset: 8
+            }]
+        };
+
+        new Chart(activityFocusCtx, {
+            type: 'doughnut',
+            data: activityData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#5D534A', 
+                            font: { size: 12 },
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map(function(label, i) {
+                                        const meta = chart.getDatasetMeta(0);
+                                        const style = meta.controller.getStyle(i);
+                                        const text = Array.isArray(label) ? label.join(' ') : label;
+                                        return {
+                                            text: text,
+                                            fillStyle: style.backgroundColor,
+                                            strokeStyle: style.borderColor,
+                                            lineWidth: style.borderWidth,
+                                            hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    title: {
+                        display: false 
+                    },
+                    tooltip: { 
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                if (Array.isArray(label)) {
+                                  return label.join(' '); 
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%' 
+            }
+        });
+
+    </script>
+</body>
+</html>
+�
