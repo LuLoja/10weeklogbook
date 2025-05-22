@@ -10,7 +10,7 @@
     <!-- Visualization & Content Choices:
         - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML visual of a journey. Justification: More engaging and thematic.
         - Weekly Level Flow: Goal: Organize. Method: HTML/CSS Tabs for navigation. Justification: Organizes weekly content effectively.
-        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage, can be imported/exported, and now feature lock icons. Level completion is dynamically tracked. Justification: Direct representation of source with enhanced user feedback and data retention/export.
+        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage, can be imported/exported, and now feature lock icons that toggle editability. Level completion is dynamically tracked. Justification: Direct representation of source with enhanced user feedback and data retention/export.
         - PDF Export: Goal: Export. Method: html2pdf.js library to capture the main content area. Justification: Provides a visual snapshot for users.
         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -67,12 +67,12 @@
         }
         .input-field-container {
             display: flex;
-            align-items: center; /* Align lock icon with the top of the input field */
+            align-items: flex-start; /* Align lock icon with the top of the input field */
             gap: 0.5rem; /* Space between input and lock */
-            margin-bottom: 0.25rem; /* Reduced bottom margin for tighter layout */
+            margin-bottom: 0.25rem; 
         }
         .input-field-placeholder {
-            flex-grow: 1; /* Input field takes available space */
+            flex-grow: 1; 
             background-color: #F8F9FA; 
             border: 1px dashed #A8DADC; 
             border-radius: 0.375rem; 
@@ -83,18 +83,23 @@
             min-height: 50px;
             white-space: pre-wrap; 
         }
+        .input-field-placeholder[contenteditable="false"] {
+            background-color: #e9ecef; /* Slightly darker for non-editable */
+            cursor: default;
+        }
         .input-field-placeholder:focus {
             outline: 2px solid #F4A261;
             font-style: normal;
         }
         .lock-icon {
-            font-size: 1.25rem; /* text-xl */
-            color: #A8DADC; /* Soft Teal/Blue for open lock */
-            cursor: default; /* Indicate it's not directly clickable for action */
-            padding-top: 0.5rem; /* Align with input field */
+            font-size: 1.25rem; 
+            color: #A8DADC; 
+            cursor: pointer; /* Make lock icon clickable */
+            padding-top: 0.75rem; /* Adjust alignment with input field text */
+            user-select: none; /* Prevent text selection on icon */
         }
         .lock-icon.locked {
-            color: #2A9D8F; /* Darker Teal for closed lock */
+            color: #2A9D8F; 
         }
         .mission-list li {
             padding-left: 1.75rem; 
@@ -152,16 +157,16 @@
             background-color: #D16040; 
         }
         .level-complete-button {
-            background-color: #4CAF50; /* Green for celebration */
+            background-color: #4CAF50; 
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
-            font-size: 1.125rem; /* text-lg */
+            font-size: 1.125rem; 
             font-weight: bold;
-            margin-top: 1.5rem; /* mt-6 */
+            margin-top: 1.5rem; 
             text-align: center;
             width: auto;
-            display: inline-block; /* To center it if parent is text-center */
+            display: inline-block; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.2s ease-out, background-color 0.3s ease;
         }
@@ -366,16 +371,20 @@
             return currentText !== '' && currentText !== placeholderText;
         }
 
-        function updateLockIcon(divId) {
+        function setLockState(divId, locked) {
             const div = document.getElementById(divId);
             const lockIcon = document.getElementById(`lock-icon-${divId}`);
             if (div && lockIcon) {
-                if (isFieldFilled(div)) {
+                if (locked) {
+                    div.contentEditable = "false";
                     lockIcon.textContent = '🔒';
                     lockIcon.classList.add('locked');
+                    div.classList.add('bg-gray-100'); // Visual cue for non-editable
                 } else {
-                    lockIcon.textContent = '�';
+                    div.contentEditable = "true";
+                    lockIcon.textContent = '🔓';
                     lockIcon.classList.remove('locked');
+                    div.classList.remove('bg-gray-100');
                 }
             }
         }
@@ -384,9 +393,9 @@
             const levelContentElement = document.getElementById(`level-${levelNumber}-content`);
             if (!levelContentElement) return;
 
-            const inputFieldsInLevel = levelContentElement.querySelectorAll('.input-field-placeholder[contenteditable="true"]');
+            const inputFieldsInLevel = levelContentElement.querySelectorAll('.input-field-placeholder[contenteditable]');
             let allFilled = true;
-            if (inputFieldsInLevel.length === 0) { // If a level has no input fields, consider it complete by default for the button.
+            if (inputFieldsInLevel.length === 0) {
                 allFilled = true; 
             } else {
                 inputFieldsInLevel.forEach(div => {
@@ -429,27 +438,28 @@
 
             const placeholderText = div.dataset.placeholder;
             const savedContent = loadFromLocalStorage(div.id);
+            const lockIcon = document.getElementById(`lock-icon-${div.id}`);
 
             if (savedContent !== null && savedContent.trim() !== "" && savedContent !== placeholderText) {
                 div.innerHTML = savedContent.replace(/\\n/g, '\n'); 
                 div.style.color = '#5D534A'; 
                 div.style.fontStyle = 'normal';
+                setLockState(div.id, true); // Lock if there's saved content
             } else {
                 div.textContent = placeholderText;
                 div.style.color = '#6c757d'; 
                 div.style.fontStyle = 'italic';
+                setLockState(div.id, false); // Unlock if empty or placeholder
             }
-            updateLockIcon(div.id); // Initial lock icon state
             
-            // Determine level number from div's parent structure if possible
             let levelNumber = null;
             let parent = div.closest('.level-content');
             if (parent && parent.id && parent.id.startsWith('level-') && parent.id.endsWith('-content')) {
                 levelNumber = parent.id.split('-')[1];
             }
 
-
             div.addEventListener('focus', () => {
+                if(div.contentEditable !== "true") return; // Only act if editable
                 if (div.textContent === placeholderText) {
                     div.textContent = '';
                     div.style.color = '#5D534A';
@@ -464,12 +474,35 @@
                     div.style.color = '#6c757d';
                     div.style.fontStyle = 'italic';
                     saveToLocalStorage(div.id, placeholderText); 
+                    setLockState(div.id, false); // Keep it unlocked if empty
                 } else {
                     saveToLocalStorage(div.id, currentText);
+                    setLockState(div.id, true); // Auto-lock if content is present
                 }
-                updateLockIcon(div.id);
                 if(levelNumber) checkLevelCompletion(levelNumber);
             });
+
+            if (lockIcon) {
+                lockIcon.addEventListener('click', () => {
+                    const isCurrentlyEditable = div.contentEditable === "true";
+                    if (isCurrentlyEditable) { // Trying to lock (was 🔓)
+                        if (isFieldFilled(div)) {
+                            setLockState(div.id, true);
+                            saveToLocalStorage(div.id, div.textContent); // Save on explicit lock
+                        }
+                        // If not filled, do nothing, it remains editable and 🔓
+                    } else { // Trying to unlock (was 🔒)
+                        setLockState(div.id, false);
+                        if (div.textContent === placeholderText) { // Should not happen if it was properly locked
+                             div.textContent = '';
+                             div.style.color = '#5D534A';
+                             div.style.fontStyle = 'normal';
+                        }
+                        div.focus();
+                    }
+                    if(levelNumber) checkLevelCompletion(levelNumber);
+                });
+            }
         }
         
         const fullWeeklyData = [
@@ -527,7 +560,6 @@
                         { id: "erkenntnis1", label: "Diese neue Erkenntnis über mich selbst habe ich gewonnen:", placeholder: "[Deine Erkenntnis]" },
                         { id: "learning1", label: "Das nehme ich aus diesem Level mit für meine weitere Reise:", placeholder: "[Dein Learning]" }
                     ]
-                    // Stamp removed, will be replaced by dynamic button
                 }
             },
             {
@@ -953,7 +985,7 @@
                 const weekContentWrapper = document.createElement('div'); 
                 weekContentWrapper.id = `level-${week.level}-content`;
                 weekContentWrapper.className = 'level-content hidden p-1 md:p-4 border border-gray-200 rounded-b-lg';
-                weekContentWrapper.setAttribute('data-level-number', week.level); // Store level number for completion check
+                weekContentWrapper.setAttribute('data-level-number', week.level); 
                 
                 let missionLogsHTML = '';
                 if (week.mission_logs) {
@@ -1050,7 +1082,7 @@
         
         function collectAllInputsForTxtExport() {
             let outputLines = [];
-            document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
+            document.querySelectorAll('.input-field-placeholder[contenteditable="true"], .input-field-placeholder[contenteditable="false"]').forEach(div => {
                 if (div.id && div.dataset.placeholder) {
                     const content = div.textContent; 
                     const preservedContent = content.replace(/\n/g, '\\n'); 
@@ -1091,7 +1123,6 @@
                                 }
                             }
                         });
-                        // After importing, check completion for all levels
                         fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
                         alert('Daten erfolgreich importiert!');
                     } catch (error) {
@@ -1108,10 +1139,9 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderWeeklyContent();
 
-            document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
+            document.querySelectorAll('.input-field-placeholder[contenteditable]').forEach(div => {
                 initializeEditableDiv(div);
             });
-            // Initial check for all levels after loading content and initializing divs
             fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
             
             const exportTxtButton = document.getElementById('exportInputsTxtButton');
@@ -1139,6 +1169,7 @@
                     const navElement = document.getElementById('mainNav');
                     const originalNavDisplay = navElement.style.display;
                     
+                    document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = 'none'); // Hide lock icons for PDF
                     navElement.style.display = 'none';
                     window.scrollTo(0, 0); 
 
@@ -1166,6 +1197,7 @@
 
                         html2pdf().from(mainContent).set(opt).save().then(() => {
                             navElement.style.display = originalNavDisplay;
+                             document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = ''); // Restore lock icons
                             document.querySelectorAll('.level-content').forEach((content, index) => {
                                 if (originalTabVisibility[index]) {
                                     content.classList.add('hidden');
@@ -1184,6 +1216,7 @@
                         }).catch(err => {
                             console.error("PDF generation error:", err);
                             navElement.style.display = originalNavDisplay;
+                            document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = '');
                             document.querySelectorAll('.level-content').forEach((content, index) => {
                                 if (originalTabVisibility[index]) {
                                     content.classList.add('hidden');
@@ -1200,7 +1233,7 @@
                                  document.querySelector('.level-content').classList.remove('hidden');
                             }
                         });
-                    }, 200); 
+                    }, 250); // Increased delay slightly
                 });
             }
             
@@ -1224,4 +1257,3 @@
     </script>
 </body>
 </html>
-�
