@@ -143,6 +143,12 @@
         .download-pdf-button:hover {
             background-color: #D16040; /* Darker Terracotta */
         }
+        .pdf-export-prepare { /* Class to apply during PDF export preparation */
+            padding-top: 0 !important; /* Attempt to remove top padding for export */
+        }
+        .pdf-export-prepare .sticky-nav {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -742,7 +748,7 @@
             {
                 level: 9,
                 title: "Showtime! – Bereite deine Präsentation vor",
-                icon: "�",
+                icon: "🌟",
                 intro: "Du hast in den letzten Wochen so viel über dich und deine beruflichen Ziele gelernt! In diesem Level bereitest du eine kurze Präsentation deiner 'Level Up Your Dreams'-Reise vor. Zeig den anderen, was du entdeckt hast und was deine Pläne sind.",
                 mission: [
                     "Strukturiere deine Abschlusspräsentation (Wer bin ich? Was ist mein Traum? Wie will ich ihn erreichen?).",
@@ -935,8 +941,8 @@
 
                 if (week.checkpoint) {
                     textContent += `Checkpoint: ${week.checkpoint.title}\n`;
-                    week.checkpoint.fields.forEach((field, fieldIdx)=> { // Added fieldIdx
-                        const element = document.getElementById(field.id || `checkpoint-w${week.level}-f${fieldIdx}`); // Used fieldIdx
+                    week.checkpoint.fields.forEach((field, fieldIdx)=> { 
+                        const element = document.getElementById(field.id || `checkpoint-w${week.level}-f${fieldIdx}`); 
                         if (element && element.textContent !== element.dataset.placeholder) {
                             textContent += `${field.label} ${element.textContent}\n`;
                         } else {
@@ -965,8 +971,8 @@
 
                 if (week.skill_unlocked) {
                     textContent += `Skill Unlocked: ${week.skill_unlocked.title}\n`;
-                     week.skill_unlocked.fields.forEach((field, fieldIdx) => { // Added fieldIdx
-                        const element = document.getElementById(field.id || `skill-w${week.level}-f${fieldIdx}`); // Used fieldIdx
+                     week.skill_unlocked.fields.forEach((field, fieldIdx) => { 
+                        const element = document.getElementById(field.id || `skill-w${week.level}-f${fieldIdx}`); 
                          if (element && element.textContent !== element.dataset.placeholder) {
                             textContent += `${field.label} ${element.textContent}\n`;
                         } else {
@@ -1009,41 +1015,76 @@
             const downloadPdfButton = document.getElementById('downloadInputsPdfButton');
             if(downloadPdfButton) {
                 downloadPdfButton.addEventListener('click', () => {
-                    const element = document.getElementById('mainContentToExport');
-                    const originalTabVisibility = [];
+                    const mainContent = document.getElementById('mainContentToExport');
+                    const navElement = document.getElementById('mainNav');
+                    const originalNavDisplay = navElement.style.display;
                     
-                    // Temporarily make all tabs visible for PDF export
+                    // Hide nav and scroll to top for better PDF capture
+                    navElement.style.display = 'none';
+                    window.scrollTo(0, 0); 
+
+                    const originalTabVisibility = [];
                     document.querySelectorAll('.level-content').forEach((content, index) => {
                         originalTabVisibility[index] = content.classList.contains('hidden');
-                        content.classList.remove('hidden');
+                        content.classList.remove('hidden'); // Make all tabs visible
                     });
 
-                    const opt = {
-                      margin:       [10, 10, 15, 10], // top, left, bottom, right in mm
-                      filename:     'Mein_LevelUpYourDreams_Logbuch.pdf',
-                      image:        { type: 'jpeg', quality: 0.95 },
-                      html2canvas:  { scale: 2, useCORS: true, scrollY: -window.scrollY, windowWidth: document.documentElement.offsetWidth, windowHeight: document.documentElement.offsetHeight },
-                      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                    };
-                    html2pdf().from(element).set(opt).save().then(() => {
-                        // Restore original tab visibility
-                        document.querySelectorAll('.level-content').forEach((content, index) => {
-                            if (originalTabVisibility[index]) {
-                                content.classList.add('hidden');
+                    // Add a small delay to allow the browser to re-render
+                    setTimeout(() => {
+                        const opt = {
+                          margin:       [10, 5, 15, 5], // top, left, bottom, right in mm
+                          filename:     'Mein_LevelUpYourDreams_Logbuch.pdf',
+                          image:        { type: 'jpeg', quality: 0.95 },
+                          html2canvas:  { 
+                            scale: 2, 
+                            useCORS: true, 
+                            scrollY: 0, // Capture from the top
+                            scrollX: 0,
+                            windowWidth: mainContent.scrollWidth, // Try to capture full width
+                            windowHeight: mainContent.scrollHeight // Try to capture full height
+                          },
+                          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        };
+
+                        html2pdf().from(mainContent).set(opt).save().then(() => {
+                            // Restore nav and original tab visibility
+                            navElement.style.display = originalNavDisplay;
+                            document.querySelectorAll('.level-content').forEach((content, index) => {
+                                if (originalTabVisibility[index]) {
+                                    content.classList.add('hidden');
+                                }
+                            });
+                            const activeButton = document.querySelector('.tab-button.active');
+                            if (activeButton) {
+                                const activeLevel = activeButton.getAttribute('data-level');
+                                const activeContent = document.getElementById(`level-${activeLevel}-content`);
+                                if (activeContent) {
+                                    activeContent.classList.remove('hidden');
+                                }
+                            } else if (document.querySelector('.level-content')) { 
+                                 document.querySelector('.level-content').classList.remove('hidden');
+                            }
+                        }).catch(err => {
+                            console.error("PDF generation error:", err);
+                            // Restore nav and tabs even if PDF generation fails
+                            navElement.style.display = originalNavDisplay;
+                            document.querySelectorAll('.level-content').forEach((content, index) => {
+                                if (originalTabVisibility[index]) {
+                                    content.classList.add('hidden');
+                                }
+                            });
+                             const activeButton = document.querySelector('.tab-button.active');
+                            if (activeButton) {
+                                const activeLevel = activeButton.getAttribute('data-level');
+                                const activeContent = document.getElementById(`level-${activeLevel}-content`);
+                                if (activeContent) {
+                                    activeContent.classList.remove('hidden');
+                                }
+                            } else if (document.querySelector('.level-content')) { 
+                                 document.querySelector('.level-content').classList.remove('hidden');
                             }
                         });
-                        // Ensure the currently active tab is visible
-                        const activeButton = document.querySelector('.tab-button.active');
-                        if (activeButton) {
-                            const activeLevel = activeButton.getAttribute('data-level');
-                            const activeContent = document.getElementById(`level-${activeLevel}-content`);
-                            if (activeContent) {
-                                activeContent.classList.remove('hidden');
-                            }
-                        } else if (document.querySelector('.level-content')) { // if no tab was active, show first
-                             document.querySelector('.level-content').classList.remove('hidden');
-                        }
-                    });
+                    }, 200); // 200ms delay
                 });
             }
             
@@ -1067,4 +1108,3 @@
     </script>
 </body>
 </html>
-�
