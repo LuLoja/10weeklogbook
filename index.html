@@ -10,7 +10,7 @@
     <!-- Visualization & Content Choices:
         - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML Stats. Justification: Clear, direct.
         - Weekly Level Flow: Goal: Organize. Method: HTML/CSS Tabs for navigation. Justification: Organizes weekly content effectively.
-        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage and can be downloaded. Justification: Direct representation of source with user data retention and export.
+        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage and can be imported/exported. Justification: Direct representation of source with user data retention and export.
         - PDF Export: Goal: Export. Method: html2pdf.js library to capture the main content area. Justification: Provides a visual snapshot for users.
         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -18,21 +18,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #FAF8F5; 
             color: #5D534A; 
-        }
-        .chart-container { /* Kept for potential future chart re-introduction, though not used now */
-            position: relative;
-            width: 100%;
-            max-width: 450px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 350px;
-            max-height: 400px;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-                max-width: 500px;
-            }
         }
         .sticky-nav {
             position: -webkit-sticky;
@@ -89,6 +74,7 @@
             font-style: italic;
             color: #6c757d; 
             min-height: 50px;
+            white-space: pre-wrap; /* To respect newlines in contenteditable */
         }
         .input-field-placeholder:focus {
             outline: 2px solid #F4A261;
@@ -119,7 +105,7 @@
             margin-right: 0.5rem; 
             font-style: normal;
         }
-        .action-button { /* Generic class for download buttons */
+        .action-button { 
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem; 
@@ -131,23 +117,23 @@
             display: block;
             width: fit-content;
         }
-        .download-txt-button {
-            background-color: #2A9D8F; /* Darker Teal for TXT Download */
+        .export-txt-button {
+            background-color: #2A9D8F; 
         }
-        .download-txt-button:hover {
-            background-color: #248374; /* Slightly darker Teal */
+        .export-txt-button:hover {
+            background-color: #248374; 
+        }
+         .import-txt-button {
+            background-color: #2a6f9d; /* A different blue for import */
+        }
+        .import-txt-button:hover {
+            background-color: #245f83; 
         }
         .download-pdf-button {
-            background-color: #E76F51; /* Terracotta for PDF Download */
+            background-color: #E76F51; 
         }
         .download-pdf-button:hover {
-            background-color: #D16040; /* Darker Terracotta */
-        }
-        .pdf-export-prepare { /* Class to apply during PDF export preparation */
-            padding-top: 0 !important; /* Attempt to remove top padding for export */
-        }
-        .pdf-export-prepare .sticky-nav {
-            display: none !important;
+            background-color: #D16040; 
         }
     </style>
 </head>
@@ -163,7 +149,7 @@
             <a href="#overview" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Überblick</a>
             <a href="#teil1" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Start</a>
             <a href="#teil2" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Wöchentliche Level</a>
-            <a href="#downloadSection" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Download</a>
+            <a href="#downloadSection" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Speichern & Laden</a>
         </div>
     </nav>
 
@@ -172,7 +158,7 @@
         <section id="overview" class="content-card">
             <h2 class="section-title">Das Programm im Überblick</h2>
             <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
-                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Deine Eingaben werden lokal in deinem Browser gespeichert und können heruntergeladen werden.
+                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Deine Eingaben werden lokal in deinem Browser gespeichert und können als Datei gesichert und wieder geladen werden.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center mb-6">
                 <div class="bg-[#A8DADC]/30 p-6 rounded-lg shadow">
@@ -251,14 +237,16 @@
         </section>
 
         <section id="downloadSection" class="content-card">
-            <h2 class="section-title">Deine Eingaben herunterladen</h2>
+            <h2 class="section-title">Fortschritt Speichern & Laden</h2>
             <p class="text-center text-lg mb-6 max-w-3xl mx-auto">
-                Hier kannst du alle deine bisherigen Eingaben aus diesem interaktiven Logbuch sichern oder weiterverarbeiten.
+                Sichere deine Eingaben in einer Textdatei oder lade einen früheren Stand. Zusätzlich kannst du die gesamte Seite als PDF exportieren.
             </p>
             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
-                <button id="downloadInputsTxtButton" class="action-button download-txt-button">💾 Alle Eingaben als TXT herunterladen</button>
+                <button id="exportInputsTxtButton" class="action-button export-txt-button">💾 Fortschritt speichern (TXT)</button>
+                <button id="importInputsTxtButton" class="action-button import-txt-button">📂 Fortschritt laden (TXT)</button>
                 <button id="downloadInputsPdfButton" class="action-button download-pdf-button">📄 Seite als PDF exportieren</button>
             </div>
+            <input type="file" id="importFileInput" accept=".txt" class="hidden">
         </section>
 
     </main>
@@ -295,7 +283,7 @@
             const savedContent = loadFromLocalStorage(div.id);
 
             if (savedContent !== null && savedContent.trim() !== "" && savedContent !== placeholderText) {
-                div.textContent = savedContent;
+                div.innerHTML = savedContent.replace(/\\n/g, '\n'); // Restore newlines for display
                 div.style.color = '#5D534A'; 
                 div.style.fontStyle = 'normal';
             } else {
@@ -313,13 +301,15 @@
             });
 
             div.addEventListener('blur', () => {
-                const currentText = div.textContent.trim();
-                if (currentText === '') {
+                const currentText = div.textContent; // Keep raw text with newlines
+                if (currentText.trim() === '') {
                     div.textContent = placeholderText;
                     div.style.color = '#6c757d';
                     div.style.fontStyle = 'italic';
                     saveToLocalStorage(div.id, placeholderText); 
                 } else {
+                    // Store with newlines escaped for consistency if needed, or store raw.
+                    // For textContent, raw is fine. For TXT export, we escape.
                     saveToLocalStorage(div.id, currentText);
                 }
             });
@@ -329,7 +319,7 @@
             {
                 level: 1,
                 title: "Entdecke deine Superkräfte",
-                icon: "🦸",
+                icon: "�",
                 intro: "In diesem Level gehst du auf Entdeckungsreise zu dir selbst. Du findest heraus, was dich einzigartig macht: deine Stärken, deine wichtigsten Werte und was dich wirklich begeistert.",
                 mission: [
                     "Finde mindestens 3 deiner persönlichen Superkräfte (Stärken).",
@@ -898,92 +888,16 @@
             });
         }
         
-        function collectAllInputsForDownload() {
-            let textContent = "Level Up Your Dreams - Logbuch Einträge\n";
-            textContent += "========================================\n\n";
-
-            // Teil 1
-            textContent += "TEIL 1: START INS ABENTEUER\n";
-            textContent += "-----------------------------\n";
-            const userNameInput = document.getElementById('userNameInput');
-            if (userNameInput && userNameInput.textContent !== userNameInput.dataset.placeholder) {
-                textContent += `Dein Name: ${userNameInput.textContent}\n\n`;
-            } else {
-                textContent += `Dein Name: [Nicht ausgefüllt]\n\n`;
-            }
-
-            const startFields = [
-                { id: 'startThreeWords', label: 'Das bin ich (in 3 Worten)' },
-                { id: 'startFutureVision', label: 'Meine aktuelle (Traum-)Vorstellung von meiner beruflichen Zukunft' },
-                { id: 'startHopes', label: 'Was ich mir von dieser Reise erhoffe' }
-            ];
-            startFields.forEach(field => {
-                const element = document.getElementById(field.id);
-                if (element && element.textContent !== element.dataset.placeholder) {
-                    textContent += `${field.label}: ${element.textContent}\n`;
-                } else {
-                    textContent += `${field.label}: [Nicht ausgefüllt]\n`;
+        function collectAllInputsForTxtExport() {
+            let outputLines = [];
+            document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
+                if (div.id && div.dataset.placeholder) {
+                    const content = div.textContent; 
+                    const preservedContent = content.replace(/\n/g, '\\n'); // Escape newlines for TXT
+                    outputLines.push(`${div.id}:::${preservedContent}`);
                 }
             });
-            textContent += "\n";
-
-            // Teil 2 - Wöchentliche Level
-            textContent += "TEIL 2: DIE WÖCHENTLICHEN LEVEL\n";
-            textContent += "---------------------------------\n";
-
-            fullWeeklyData.forEach(week => {
-                textContent += `\nWOCHE ${week.level}: ${week.title}\n`;
-                textContent += `---------------------------------\n`;
-                textContent += `Einführung: ${week.intro}\n`;
-                textContent += "Missionen:\n";
-                week.mission.forEach(m => textContent += `- ${m}\n`);
-                textContent += "\n";
-
-                if (week.checkpoint) {
-                    textContent += `Checkpoint: ${week.checkpoint.title}\n`;
-                    week.checkpoint.fields.forEach((field, fieldIdx)=> { 
-                        const element = document.getElementById(field.id || `checkpoint-w${week.level}-f${fieldIdx}`); 
-                        if (element && element.textContent !== element.dataset.placeholder) {
-                            textContent += `${field.label} ${element.textContent}\n`;
-                        } else {
-                             textContent += `${field.label} [Nicht ausgefüllt]\n`;
-                        }
-                    });
-                    textContent += "\n";
-                }
-
-                if (week.mission_logs) {
-                    textContent += "Mission Logs:\n";
-                    week.mission_logs.forEach((log, logIdx) => {
-                        textContent += `  ${log.title}:\n`;
-                        textContent += `  ${log.instruction}\n`;
-                        log.fields.forEach((field, fieldIdx) => {
-                            const element = document.getElementById(field.id || `field-w${week.level}-l${logIdx}-f${fieldIdx}`);
-                             if (element && element.textContent !== element.dataset.placeholder) {
-                                textContent += `    ${field.label} ${element.textContent}\n`;
-                            } else {
-                                textContent += `    ${field.label} [Nicht ausgefüllt]\n`;
-                            }
-                        });
-                        textContent += "\n";
-                    });
-                }
-
-                if (week.skill_unlocked) {
-                    textContent += `Skill Unlocked: ${week.skill_unlocked.title}\n`;
-                     week.skill_unlocked.fields.forEach((field, fieldIdx) => { 
-                        const element = document.getElementById(field.id || `skill-w${week.level}-f${fieldIdx}`); 
-                         if (element && element.textContent !== element.dataset.placeholder) {
-                            textContent += `${field.label} ${element.textContent}\n`;
-                        } else {
-                            textContent += `${field.label} [Nicht ausgefüllt]\n`;
-                        }
-                    });
-                    if(week.skill_unlocked.stamp) textContent += `${week.skill_unlocked.stamp}\n`;
-                    textContent += "\n";
-                }
-            });
-            return textContent;
+            return outputLines.join('\n');
         }
 
         function downloadTextFile(filename, text) {
@@ -996,6 +910,38 @@
             document.body.removeChild(element);
         }
 
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const lines = e.target.result.split('\n');
+                        lines.forEach(line => {
+                            const parts = line.split(':::');
+                            if (parts.length === 2) {
+                                const id = parts[0];
+                                const contentWithEscapedNewlines = parts[1];
+                                const content = contentWithEscapedNewlines.replace(/\\n/g, '\n'); // Restore newlines
+                                const element = document.getElementById(id);
+                                if (element) {
+                                    element.textContent = content; 
+                                    saveToLocalStorage(id, content); 
+                                    initializeEditableDiv(element); 
+                                }
+                            }
+                        });
+                        alert('Daten erfolgreich importiert!');
+                    } catch (error) {
+                        console.error("Fehler beim Importieren der Datei:", error);
+                        alert("Fehler beim Importieren der Datei. Bitte stelle sicher, dass es eine gültige Export-Datei ist.");
+                    }
+                    event.target.value = null; 
+                };
+                reader.readAsText(file);
+            }
+        }
+
 
         window.addEventListener('DOMContentLoaded', () => {
             renderWeeklyContent();
@@ -1004,13 +950,23 @@
                 initializeEditableDiv(div);
             });
             
-            const downloadTxtButton = document.getElementById('downloadInputsTxtButton');
-            if(downloadTxtButton) {
-                downloadTxtButton.addEventListener('click', () => {
-                    const allInputs = collectAllInputsForDownload();
-                    downloadTextFile('Mein_LevelUpYourDreams_Logbuch.txt', allInputs);
+            const exportTxtButton = document.getElementById('exportInputsTxtButton');
+            if(exportTxtButton) {
+                exportTxtButton.addEventListener('click', () => {
+                    const allInputs = collectAllInputsForTxtExport();
+                    downloadTextFile('Mein_LevelUpYourDreams_Logbuch_Speicherstand.txt', allInputs);
                 });
             }
+
+            const importFileInput = document.getElementById('importFileInput');
+            const importTxtButton = document.getElementById('importInputsTxtButton');
+            if(importTxtButton && importFileInput) {
+                importTxtButton.addEventListener('click', () => {
+                    importFileInput.click(); 
+                });
+                importFileInput.addEventListener('change', handleImportFile);
+            }
+
 
             const downloadPdfButton = document.getElementById('downloadInputsPdfButton');
             if(downloadPdfButton) {
@@ -1019,35 +975,32 @@
                     const navElement = document.getElementById('mainNav');
                     const originalNavDisplay = navElement.style.display;
                     
-                    // Hide nav and scroll to top for better PDF capture
                     navElement.style.display = 'none';
                     window.scrollTo(0, 0); 
 
                     const originalTabVisibility = [];
                     document.querySelectorAll('.level-content').forEach((content, index) => {
                         originalTabVisibility[index] = content.classList.contains('hidden');
-                        content.classList.remove('hidden'); // Make all tabs visible
+                        content.classList.remove('hidden'); 
                     });
 
-                    // Add a small delay to allow the browser to re-render
                     setTimeout(() => {
                         const opt = {
-                          margin:       [10, 5, 15, 5], // top, left, bottom, right in mm
+                          margin:       [10, 5, 15, 5], 
                           filename:     'Mein_LevelUpYourDreams_Logbuch.pdf',
                           image:        { type: 'jpeg', quality: 0.95 },
                           html2canvas:  { 
                             scale: 2, 
                             useCORS: true, 
-                            scrollY: 0, // Capture from the top
+                            scrollY: 0, 
                             scrollX: 0,
-                            windowWidth: mainContent.scrollWidth, // Try to capture full width
-                            windowHeight: mainContent.scrollHeight // Try to capture full height
+                            windowWidth: mainContent.scrollWidth, 
+                            windowHeight: mainContent.scrollHeight 
                           },
                           jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                         };
 
                         html2pdf().from(mainContent).set(opt).save().then(() => {
-                            // Restore nav and original tab visibility
                             navElement.style.display = originalNavDisplay;
                             document.querySelectorAll('.level-content').forEach((content, index) => {
                                 if (originalTabVisibility[index]) {
@@ -1066,7 +1019,6 @@
                             }
                         }).catch(err => {
                             console.error("PDF generation error:", err);
-                            // Restore nav and tabs even if PDF generation fails
                             navElement.style.display = originalNavDisplay;
                             document.querySelectorAll('.level-content').forEach((content, index) => {
                                 if (originalTabVisibility[index]) {
@@ -1084,7 +1036,7 @@
                                  document.querySelector('.level-content').classList.remove('hidden');
                             }
                         });
-                    }, 200); // 200ms delay
+                    }, 200); 
                 });
             }
             
@@ -1108,3 +1060,4 @@
     </script>
 </body>
 </html>
+�
