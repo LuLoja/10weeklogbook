@@ -8,9 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Visualization & Content Choices:
-        - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML Stats. Justification: Clear, direct.
+        - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML visual of a journey. Justification: More engaging and thematic.
         - Weekly Level Flow: Goal: Organize. Method: HTML/CSS Tabs for navigation. Justification: Organizes weekly content effectively.
-        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage and can be imported/exported. Justification: Direct representation of source with user data retention and export.
+        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage, can be imported/exported, and now feature lock icons. Level completion is dynamically tracked. Justification: Direct representation of source with enhanced user feedback and data retention/export.
         - PDF Export: Goal: Export. Method: html2pdf.js library to capture the main content area. Justification: Provides a visual snapshot for users.
         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -65,7 +65,14 @@
             margin-top: 1.5rem; 
             margin-bottom: 1rem; 
         }
+        .input-field-container {
+            display: flex;
+            align-items: center; /* Align lock icon with the top of the input field */
+            gap: 0.5rem; /* Space between input and lock */
+            margin-bottom: 0.25rem; /* Reduced bottom margin for tighter layout */
+        }
         .input-field-placeholder {
+            flex-grow: 1; /* Input field takes available space */
             background-color: #F8F9FA; 
             border: 1px dashed #A8DADC; 
             border-radius: 0.375rem; 
@@ -74,11 +81,20 @@
             font-style: italic;
             color: #6c757d; 
             min-height: 50px;
-            white-space: pre-wrap; /* To respect newlines in contenteditable */
+            white-space: pre-wrap; 
         }
         .input-field-placeholder:focus {
             outline: 2px solid #F4A261;
             font-style: normal;
+        }
+        .lock-icon {
+            font-size: 1.25rem; /* text-xl */
+            color: #A8DADC; /* Soft Teal/Blue for open lock */
+            cursor: default; /* Indicate it's not directly clickable for action */
+            padding-top: 0.5rem; /* Align with input field */
+        }
+        .lock-icon.locked {
+            color: #2A9D8F; /* Darker Teal for closed lock */
         }
         .mission-list li {
             padding-left: 1.75rem; 
@@ -124,7 +140,7 @@
             background-color: #248374; 
         }
          .import-txt-button {
-            background-color: #2a6f9d; /* A different blue for import */
+            background-color: #2a6f9d; 
         }
         .import-txt-button:hover {
             background-color: #245f83; 
@@ -135,6 +151,53 @@
         .download-pdf-button:hover {
             background-color: #D16040; 
         }
+        .level-complete-button {
+            background-color: #4CAF50; /* Green for celebration */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: bold;
+            margin-top: 1.5rem; /* mt-6 */
+            text-align: center;
+            width: auto;
+            display: inline-block; /* To center it if parent is text-center */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease-out, background-color 0.3s ease;
+        }
+        .level-complete-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        .journey-path {
+            height: 8px; 
+            background: linear-gradient(to right, #A8DADC, #F4A261, #E76F51);
+            border-radius: 4px;
+            position: relative;
+            margin-top: -20px; 
+            z-index: -1; 
+        }
+        .journey-milestone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative; 
+        }
+        .milestone-icon-bg {
+            background-color: #FFFFFF; 
+            padding: 4px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 4px;
+        }
+         .milestone-text {
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            color: #5D534A;
+            margin-top: 0.25rem; 
+        }
+
     </style>
 </head>
 <body>
@@ -158,28 +221,53 @@
         <section id="overview" class="content-card">
             <h2 class="section-title">Das Programm im Überblick</h2>
             <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
-                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Deine Eingaben werden lokal in deinem Browser gespeichert und können als Datei gesichert und wieder geladen werden.
+                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Deine Eingaben werden lokal in deinem Browser gespeichert und können als Datei gesichert und wieder geladen werden. Begib dich auf die Reise!
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center mb-6">
-                <div class="bg-[#A8DADC]/30 p-6 rounded-lg shadow">
-                    <div class="text-5xl font-bold text-[#E76F51]">10</div>
-                    <div class="text-xl font-semibold text-[#5D534A]">Wochen</div>
-                    <p class="text-sm text-[#5D534A]">geführte Expedition</p>
+            
+            <div class="mt-8 mb-12 flex flex-col items-center">
+                <div class="w-full max-w-3xl px-4"> 
+                    <div class="flex justify-between items-end relative mb-2">
+                        <div class="journey-milestone">
+                            <div class="milestone-icon-bg">
+                                <span class="text-3xl text-[#A8DADC]">🚀</span>
+                            </div>
+                            <p class="milestone-text">Start</p>
+                        </div>
+
+                        <div class="journey-milestone">
+                             <div class="milestone-icon-bg">
+                                <span class="text-4xl">🚶</span> 
+                            </div>
+                            <p class="milestone-text text-[#E76F51]">Deine Reise</p>
+                        </div>
+
+                        <div class="journey-milestone">
+                            <div class="milestone-icon-bg bg-[#A8DADC]/30">
+                                <span class="text-2xl font-bold text-[#5D534A]">10</span>
+                            </div>
+                            <p class="milestone-text">Wochen</p>
+                        </div>
+
+                         <div class="journey-milestone">
+                            <div class="milestone-icon-bg bg-[#F4A261]/30">
+                                <span class="text-2xl font-bold text-[#5D534A]">9+</span>
+                            </div>
+                            <p class="milestone-text">Level</p>
+                        </div>
+
+                        <div class="journey-milestone">
+                            <div class="milestone-icon-bg">
+                                <span class="text-3xl text-[#E76F51]">🏆</span>
+                            </div>
+                            <p class="milestone-text">Ziel</p>
+                        </div>
+                    </div>
+                    <div class="journey-path"></div>
                 </div>
-                <div class="bg-[#F4A261]/30 p-6 rounded-lg shadow">
-                    <div class="text-5xl font-bold text-[#E76F51]">9+</div>
-                    <div class="text-xl font-semibold text-[#5D534A]">Level</div>
-                    <p class="text-sm text-[#5D534A]">voller Entdeckungen</p>
-                </div>
-                <div class="bg-[#E76F51]/30 p-6 rounded-lg shadow">
-                    <div class="text-5xl font-bold text-[#A8DADC]">💾</div>
-                    <div class="text-xl font-semibold text-[#5D534A]">Speichert</div>
-                    <p class="text-sm text-[#5D534A]">deine Eingaben</p>
-                </div>
+                <p class="text-center text-md text-[#5D534A] mt-10">
+                    Dieses interaktive SPA dient als digitaler Überblick und Begleiter zum physischen oder digitalen Logbuch. Es hilft dir, die Struktur und die Inhalte der einzelnen Wochen schnell zu erfassen.
+                </p>
             </div>
-            <p class="text-center text-md text-[#5D534A]">
-                Dieses interaktive SPA dient als digitaler Überblick und Begleiter zum physischen oder digitalen Logbuch. Es hilft dir, die Struktur und die Inhalte der einzelnen Wochen schnell zu erfassen.
-            </p>
         </section>
 
         <section id="teil1" class="content-card">
@@ -191,7 +279,10 @@
             <div>
                 <h3 class="subsection-title"><span class="icon-placeholder">📖</span>Folie 1: Titelfolie (Konzept)</h3>
                 <p>Die Reise beginnt mit deinem Namen und dem Versprechen einer spannenden Entwicklung: "Level Up Your Dreams – Dein persönliches Logbuch zur Traumkarriere".</p>
-                <div id="userNameInput" class="input-field-placeholder mt-2" contenteditable="true" data-placeholder="[Dein Name hier eintragen]">[Dein Name hier eintragen]</div>
+                <div class="input-field-container">
+                    <div id="userNameInput" class="input-field-placeholder" contenteditable="true" data-placeholder="[Dein Name hier eintragen]">[Dein Name hier eintragen]</div>
+                    <span id="lock-icon-userNameInput" class="lock-icon">🔓</span>
+                </div>
             </div>
 
             <div class="mt-8">
@@ -211,15 +302,24 @@
                 <div class="space-y-4 mt-4">
                     <div>
                         <label for="startThreeWords" class="font-semibold">Das bin ich (in 3 Worten, die mich gut beschreiben):</label>
-                        <div id="startThreeWords" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine 3 Worte]">[Schreibe hier deine 3 Worte]</div>
+                        <div class="input-field-container">
+                            <div id="startThreeWords" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine 3 Worte]">[Schreibe hier deine 3 Worte]</div>
+                            <span id="lock-icon-startThreeWords" class="lock-icon">🔓</span>
+                        </div>
                     </div>
                     <div>
                         <label for="startFutureVision" class="font-semibold">Meine aktuelle (Traum-)Vorstellung von meiner beruflichen Zukunft:</label>
-                        <div id="startFutureVision" class="input-field-placeholder" contenteditable="true" data-placeholder="[Beschreibe oder füge hier dein Bild ein]">[Beschreibe oder füge hier dein Bild ein]</div>
+                         <div class="input-field-container">
+                            <div id="startFutureVision" class="input-field-placeholder" contenteditable="true" data-placeholder="[Beschreibe oder füge hier dein Bild ein]">[Beschreibe oder füge hier dein Bild ein]</div>
+                            <span id="lock-icon-startFutureVision" class="lock-icon">🔓</span>
+                        </div>
                     </div>
                     <div>
                         <label for="startHopes" class="font-semibold">Was ich mir von dieser 'Level Up Your Dreams'-Reise erhoffe:</label>
-                        <div id="startHopes" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine Hoffnungen/Ziele]">[Schreibe hier deine Hoffnungen/Ziele]</div>
+                        <div class="input-field-container">
+                            <div id="startHopes" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine Hoffnungen/Ziele]">[Schreibe hier deine Hoffnungen/Ziele]</div>
+                            <span id="lock-icon-startHopes" class="lock-icon">🔓</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -259,6 +359,54 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         
+        function isFieldFilled(div) {
+            if (!div || !div.dataset) return false;
+            const placeholderText = div.dataset.placeholder;
+            const currentText = div.textContent.trim();
+            return currentText !== '' && currentText !== placeholderText;
+        }
+
+        function updateLockIcon(divId) {
+            const div = document.getElementById(divId);
+            const lockIcon = document.getElementById(`lock-icon-${divId}`);
+            if (div && lockIcon) {
+                if (isFieldFilled(div)) {
+                    lockIcon.textContent = '🔒';
+                    lockIcon.classList.add('locked');
+                } else {
+                    lockIcon.textContent = '�';
+                    lockIcon.classList.remove('locked');
+                }
+            }
+        }
+
+        function checkLevelCompletion(levelNumber) {
+            const levelContentElement = document.getElementById(`level-${levelNumber}-content`);
+            if (!levelContentElement) return;
+
+            const inputFieldsInLevel = levelContentElement.querySelectorAll('.input-field-placeholder[contenteditable="true"]');
+            let allFilled = true;
+            if (inputFieldsInLevel.length === 0) { // If a level has no input fields, consider it complete by default for the button.
+                allFilled = true; 
+            } else {
+                inputFieldsInLevel.forEach(div => {
+                    if (!isFieldFilled(div)) {
+                        allFilled = false;
+                    }
+                });
+            }
+            
+            const completeButton = document.getElementById(`level-complete-btn-${levelNumber}`);
+            if (completeButton) {
+                if (allFilled) {
+                    completeButton.classList.remove('hidden');
+                } else {
+                    completeButton.classList.add('hidden');
+                }
+            }
+        }
+
+
         function saveToLocalStorage(elementId, content) {
             try {
                 localStorage.setItem(elementId, content);
@@ -283,7 +431,7 @@
             const savedContent = loadFromLocalStorage(div.id);
 
             if (savedContent !== null && savedContent.trim() !== "" && savedContent !== placeholderText) {
-                div.innerHTML = savedContent.replace(/\\n/g, '\n'); // Restore newlines for display
+                div.innerHTML = savedContent.replace(/\\n/g, '\n'); 
                 div.style.color = '#5D534A'; 
                 div.style.fontStyle = 'normal';
             } else {
@@ -291,6 +439,15 @@
                 div.style.color = '#6c757d'; 
                 div.style.fontStyle = 'italic';
             }
+            updateLockIcon(div.id); // Initial lock icon state
+            
+            // Determine level number from div's parent structure if possible
+            let levelNumber = null;
+            let parent = div.closest('.level-content');
+            if (parent && parent.id && parent.id.startsWith('level-') && parent.id.endsWith('-content')) {
+                levelNumber = parent.id.split('-')[1];
+            }
+
 
             div.addEventListener('focus', () => {
                 if (div.textContent === placeholderText) {
@@ -301,17 +458,17 @@
             });
 
             div.addEventListener('blur', () => {
-                const currentText = div.textContent; // Keep raw text with newlines
+                const currentText = div.textContent; 
                 if (currentText.trim() === '') {
                     div.textContent = placeholderText;
                     div.style.color = '#6c757d';
                     div.style.fontStyle = 'italic';
                     saveToLocalStorage(div.id, placeholderText); 
                 } else {
-                    // Store with newlines escaped for consistency if needed, or store raw.
-                    // For textContent, raw is fine. For TXT export, we escape.
                     saveToLocalStorage(div.id, currentText);
                 }
+                updateLockIcon(div.id);
+                if(levelNumber) checkLevelCompletion(levelNumber);
             });
         }
         
@@ -319,7 +476,7 @@
             {
                 level: 1,
                 title: "Entdecke deine Superkräfte",
-                icon: "�",
+                icon: "🦸",
                 intro: "In diesem Level gehst du auf Entdeckungsreise zu dir selbst. Du findest heraus, was dich einzigartig macht: deine Stärken, deine wichtigsten Werte und was dich wirklich begeistert.",
                 mission: [
                     "Finde mindestens 3 deiner persönlichen Superkräfte (Stärken).",
@@ -369,8 +526,8 @@
                         { id: "ahaMoment1", label: "Mein größter 'Aha!'-Moment beim Entdecken meiner Stärken/Werte/Interessen war:", placeholder: "[Dein Aha-Moment]" },
                         { id: "erkenntnis1", label: "Diese neue Erkenntnis über mich selbst habe ich gewonnen:", placeholder: "[Deine Erkenntnis]" },
                         { id: "learning1", label: "Das nehme ich aus diesem Level mit für meine weitere Reise:", placeholder: "[Dein Learning]" }
-                    ],
-                    stamp: "[Level 1 gemeistert!]"
+                    ]
+                    // Stamp removed, will be replaced by dynamic button
                 }
             },
             {
@@ -419,8 +576,7 @@
                         { id: "entdeckungBerufswelt2", label: "Die überraschendste Entdeckung in der Berufswelt diese Woche war für mich:", placeholder: "[Deine Entdeckung]" },
                         { id: "definitionTraumjob2", label: "Ich habe gelernt, dass ein 'Traumjob' für mich bedeutet, dass er ...", placeholder: "[Deine Definition]" },
                         { id: "erkenntnisOrientierung2", label: "Diese Erkenntnis hilft mir bei meiner weiteren Berufsorientierung:", placeholder: "[Dein Learning]" }
-                    ],
-                    stamp: "[Level 2 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -463,8 +619,7 @@
                         { id: "erkenntnisZukunftsbrief3", label: "Das Schreiben des Zukunftsbriefs / Gestalten des Vision Boards hat mir gezeigt, dass ...", placeholder: "[Deine Erkenntnis]" },
                         { id: "eigenschaftZukunftsIch3", label: "Eine wichtige Eigenschaft meines 'Zukunfts-Ichs', die ich entwickeln möchte, ist:", placeholder: "[Eigenschaft nennen]" },
                         { id: "motivationVision3", label: "Meine Vision für 2035 motiviert mich, weil ...", placeholder: "[Deine Motivation]" }
-                    ],
-                    stamp: "[Level 3 gemeistert!]"
+                    ]
                 }
             },
              {
@@ -518,8 +673,7 @@
                         { id: "gelerntUeberBeruf4", label: "Durch das Interview habe ich über den Beruf [Berufsname] gelernt, dass ...", placeholder: "[Wichtige neue Info]" },
                         { id: "wichtigeFaehigkeitBeruf4", label: "Eine Fähigkeit, die für diesen Beruf wichtig ist und die ich auch gerne hätte/stärken möchte, ist:", placeholder: "[Fähigkeit nennen]" },
                         { id: "wichtigkeitVerstehen4", label: "Diese Woche hat mir geholfen zu verstehen, wie wichtig es ist, ...", placeholder: "[z.B. Fragen zu stellen, hinter die Kulissen zu schauen]" }
-                    ],
-                    stamp: "[Level 4 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -569,8 +723,7 @@
                         { id: "ueberraschungSkillChallenge5", label: "Ich war überrascht, dass ich bei der Skill-Challenge gut darin war, ...", placeholder: "[Positive Überraschung]" },
                         { id: "unterschiedSoftHardSkills5", label: "Der Unterschied zwischen Soft Skills und Hard Skills ist mir jetzt klarer. Ein wichtiger Soft Skill für fast jeden Beruf ist meiner Meinung nach:", placeholder: "[Soft Skill nennen]." },
                         { id: "vorsatzSkillArbeiten5", label: "Ich nehme mir vor, an folgendem Skill gezielt zu arbeiten:", placeholder: "[Skill nennen], indem ich [konkrete Idee zur Verbesserung]." }
-                    ],
-                    stamp: "[Level 5 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -620,8 +773,7 @@
                         { id: "nutzenCanvas6", label: "Das Erstellen des Karriere-Canvas hat mir geholfen, ...", placeholder: "[Nutzen des Canvas für dich]" },
                         { id: "ersterSchrittKlar6", label: "Ein konkreter erster Schritt, den ich jetzt klarer sehe, ist:", placeholder: "[Dein erster Schritt]." },
                         { id: "lernenPlanen6", label: "Ich habe gelernt, dass es beim Planen auch wichtig ist, ...", placeholder: "[z.B. flexibel zu bleiben, Unterstützung zu suchen]" }
-                    ],
-                    stamp: "[Level 6 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -670,8 +822,7 @@
                         { id: "einsichtNetzwerken7", label: "Mir ist klar geworden, dass Netzwerken bedeutet, ...", placeholder: "[Deine neue Einsicht zum Netzwerken]" },
                         { id: "aspektEmailSchreiben7", label: "Beim Formulieren der E-Mail war es für mich wichtig/schwierig, auf ...", placeholder: "[Aspekt des E-Mail-Schreibens] zu achten." },
                         { id: "vorsatzMenschenZugehen7", label: "Ich nehme mir vor, mutiger auf Menschen zuzugehen, indem ich ...", placeholder: "[Konkreter Vorsatz]" }
-                    ],
-                    stamp: "[Level 7 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -731,8 +882,7 @@
                         { id: "erkenntnisAusbildungsweg8", label: "Die Recherche zum Ausbildungsweg hat mir gezeigt, dass ...", placeholder: "[Wichtige Erkenntnis zur Ausbildung/Studium]" },
                         { id: "gefuehlPlanB8", label: "Einen Plan B zu haben, gibt mir das Gefühl von ...", placeholder: "[Dein Gefühl dazu]." },
                         { id: "wichtigkeitBerufswahl8", label: "Ich habe gelernt, dass es bei der Berufswahl wichtig ist, nicht nur vom Traum zu schwärmen, sondern auch ...", placeholder: "[z.B. die Fakten zu checken, realistisch zu sein]." }
-                    ],
-                    stamp: "[Level 8 gemeistert!]"
+                    ]
                 }
             },
             {
@@ -781,8 +931,7 @@
                         { id: "erkenntnisPraesentation9", label: "Die Vorbereitung meiner Präsentation hat mir geholfen, ...", placeholder: "[Deine Erkenntnis]" },
                         { id: "sicherheitPraesentation9", label: "Ich fühle mich jetzt sicherer darin, ...", placeholder: "[Bereich des Selbstvertrauens]" },
                         { id: "tippPraesentation9", label: "Mein wichtigster Tipp für eine gute Präsentation ist ...", placeholder: "[Dein Tipp]" }
-                    ],
-                    stamp: "[Level 9 gemeistert!]"
+                    ]
                 }
             }
         ];
@@ -804,6 +953,7 @@
                 const weekContentWrapper = document.createElement('div'); 
                 weekContentWrapper.id = `level-${week.level}-content`;
                 weekContentWrapper.className = 'level-content hidden p-1 md:p-4 border border-gray-200 rounded-b-lg';
+                weekContentWrapper.setAttribute('data-level-number', week.level); // Store level number for completion check
                 
                 let missionLogsHTML = '';
                 if (week.mission_logs) {
@@ -816,7 +966,10 @@
                                 return `
                                     <div class="mb-2">
                                         <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                        <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                        <div class="input-field-container">
+                                            <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                            <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
+                                        </div>
                                     </div>`;
                             }).join('')}
                         </div>`;
@@ -832,7 +985,10 @@
                             return `
                             <div class="mb-2">
                                 <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                <div class="input-field-container">
+                                    <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                    <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
+                                </div>
                             </div>`;
                         }).join('')}
                     </div>`;
@@ -840,19 +996,23 @@
 
                 let skillUnlockedHTML = '';
                 if (week.skill_unlocked) {
-                    skillUnlockedHTML = `<div class="mt-6 p-4 bg-emerald-50 rounded-lg">
-                        <h4 class="text-xl font-semibold text-emerald-500 mb-3">${week.skill_unlocked.icon || '🏆'} ${week.skill_unlocked.title}</h4>
+                    skillUnlockedHTML = `<div class="mt-6 p-4 bg-emerald-50 rounded-lg text-center">
+                        <h4 class="text-xl font-semibold text-emerald-600 mb-3">${week.skill_unlocked.icon || '🏆'} ${week.skill_unlocked.title}</h4>
                          ${week.skill_unlocked.fields.map((f, fieldIndex) => {
                             const divId = f.id || `skill-w${week.level}-f${fieldIndex}`;
                             return `
-                            <div class="mb-2">
+                            <div class="mb-2 text-left">
                                 <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                <div class="input-field-container">
+                                    <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
+                                    <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
+                                </div>
                             </div>`;
                          }).join('')}
-                        ${week.skill_unlocked.stamp ? `<p class="mt-3 font-bold text-emerald-600 text-center">${week.skill_unlocked.stamp}</p>` : ''}
+                        <button id="level-complete-btn-${week.level}" class="level-complete-button hidden">🎉 Level ${week.level} gemeistert! 🥳</button>
                     </div>`;
                 }
+
 
                 weekContentWrapper.innerHTML = `
                     <div class="p-2 md:p-6">
@@ -893,7 +1053,7 @@
             document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
                 if (div.id && div.dataset.placeholder) {
                     const content = div.textContent; 
-                    const preservedContent = content.replace(/\n/g, '\\n'); // Escape newlines for TXT
+                    const preservedContent = content.replace(/\n/g, '\\n'); 
                     outputLines.push(`${div.id}:::${preservedContent}`);
                 }
             });
@@ -922,7 +1082,7 @@
                             if (parts.length === 2) {
                                 const id = parts[0];
                                 const contentWithEscapedNewlines = parts[1];
-                                const content = contentWithEscapedNewlines.replace(/\\n/g, '\n'); // Restore newlines
+                                const content = contentWithEscapedNewlines.replace(/\\n/g, '\n'); 
                                 const element = document.getElementById(id);
                                 if (element) {
                                     element.textContent = content; 
@@ -931,6 +1091,8 @@
                                 }
                             }
                         });
+                        // After importing, check completion for all levels
+                        fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
                         alert('Daten erfolgreich importiert!');
                     } catch (error) {
                         console.error("Fehler beim Importieren der Datei:", error);
@@ -949,6 +1111,8 @@
             document.querySelectorAll('.input-field-placeholder[contenteditable="true"]').forEach(div => {
                 initializeEditableDiv(div);
             });
+            // Initial check for all levels after loading content and initializing divs
+            fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
             
             const exportTxtButton = document.getElementById('exportInputsTxtButton');
             if(exportTxtButton) {
