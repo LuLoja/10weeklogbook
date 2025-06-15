@@ -1,1258 +1,336 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Level Up Your Dreams - Interaktives Logbuch</title>
+    <title>Alon Akademie Wesel | Zukunft gestalten</title>
+    <!-- Chosen Palette: Warm Innovation -->
+    <!-- Application Structure Plan: A single-page application (SPA) structure is used to provide a seamless user experience. The main page serves as a dashboard, presenting the four key user journeys (Memberships, Courses, Donate, Volunteer) in clear, concise cards. Clicking a card or a navigation link dynamically reveals a detailed "deep-dive" section for that topic without a page reload. This is achieved by showing/hiding content sections with JavaScript. This structure was chosen because it caters to multiple distinct audiences simultaneously, allowing each to quickly self-identify and find their relevant path. It avoids overwhelming new visitors with too much information upfront while making detailed content easily accessible, thus maximizing engagement and conversion for parents, donors, and volunteers alike. URL hash changes provide persistent links to each section. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Various offerings (Memberships, Courses, Donation Tiers). Goal: Inform, Compare, Guide. Presentation Method: A card-based layout using HTML/Tailwind for modularity and clarity. Side-by-side comparison grids for membership tiers. Interaction: JavaScript-powered view-switching to show/hide detailed sections. Justification: This provides a clean, organized, and interactive way for users to navigate complex offerings without leaving the page.
+        - Report Info: Donation Impact (€25, €75, €100). Goal: Compare donation impact. Presentation Method: An interactive bar chart. Interaction: The chart visually represents the different donation levels and their direct impact, making the act of giving more tangible. Justification: A chart is more engaging and easier to digest than a text list, helping to encourage donations. Library/Method: Chart.js on a Canvas element.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Visualization & Content Choices:
-        - Program Overview (Duration, Levels): Goal: Inform. Method: Dynamic HTML visual of a journey. Justification: More engaging and thematic.
-        - Weekly Level Flow: Goal: Organize. Method: HTML/CSS Tabs for navigation. Justification: Organizes weekly content effectively.
-        - Weekly Content (Prompts, Missions): Goal: Inform. Method: Styled HTML text blocks representing Logbuch pages. User inputs in contenteditable divs are persisted to localStorage, can be imported/exported, and now feature lock icons that toggle editability. Level completion is dynamically tracked. Justification: Direct representation of source with enhanced user feedback and data retention/export.
-        - PDF Export: Goal: Export. Method: html2pdf.js library to capture the main content area. Justification: Provides a visual snapshot for users.
-        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #FAF8F5; 
-            color: #5D534A; 
-        }
-        .sticky-nav {
-            position: -webkit-sticky;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background-color: rgba(250, 248, 245, 0.9); 
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .tab-button {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            color: #5D534A; 
-        }
-        .tab-button.active {
-            border-bottom-color: #F4A261; 
-            color: #E76F51; 
-        }
-        .tab-button:hover {
-            background-color: rgba(168, 218, 220, 0.2); 
-        }
-        .content-card {
-            background-color: #FFFFFF;
-            border-radius: 0.75rem; 
-            padding: 2rem; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.05);
-            margin-bottom: 2rem; 
-        }
-        .section-title {
-            font-size: 2.25rem; 
-            font-weight: 700; 
-            color: #E76F51; 
-            margin-bottom: 1.5rem; 
-            text-align: center;
-        }
-        .subsection-title {
-            font-size: 1.5rem; 
-            font-weight: 600; 
-            color: #F4A261; 
-            margin-top: 1.5rem; 
-            margin-bottom: 1rem; 
-        }
-        .input-field-container {
-            display: flex;
-            align-items: flex-start; /* Align lock icon with the top of the input field */
-            gap: 0.5rem; /* Space between input and lock */
-            margin-bottom: 0.25rem; 
-        }
-        .input-field-placeholder {
-            flex-grow: 1; 
-            background-color: #F8F9FA; 
-            border: 1px dashed #A8DADC; 
-            border-radius: 0.375rem; 
-            padding: 0.75rem; 
-            margin-top: 0.5rem; 
-            font-style: italic;
-            color: #6c757d; 
-            min-height: 50px;
-            white-space: pre-wrap; 
-        }
-        .input-field-placeholder[contenteditable="false"] {
-            background-color: #e9ecef; /* Slightly darker for non-editable */
-            cursor: default;
-        }
-        .input-field-placeholder:focus {
-            outline: 2px solid #F4A261;
-            font-style: normal;
-        }
-        .lock-icon {
-            font-size: 1.25rem; 
-            color: #A8DADC; 
-            cursor: pointer; /* Make lock icon clickable */
-            padding-top: 0.75rem; /* Adjust alignment with input field text */
-            user-select: none; /* Prevent text selection on icon */
-        }
-        .lock-icon.locked {
-            color: #2A9D8F; 
-        }
-        .mission-list li {
-            padding-left: 1.75rem; 
-            position: relative;
-            margin-bottom: 0.5rem; 
-        }
-        .mission-list li::before {
-            content: '🎯'; 
-            position: absolute;
-            left: 0;
-            color: #F4A261; 
-            font-size: 1.25rem; 
-        }
-        .icon-placeholder {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            text-align: center;
-            border-radius: 50%;
-            background-color: #A8DADC; 
-            color: white;
-            font-weight: bold;
-            margin-right: 0.5rem; 
-            font-style: normal;
-        }
-        .action-button { 
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem; 
-            font-size: 1rem; 
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-            cursor: pointer;
-            border: none;
-            display: block;
-            width: fit-content;
-        }
-        .export-txt-button {
-            background-color: #2A9D8F; 
-        }
-        .export-txt-button:hover {
-            background-color: #248374; 
-        }
-         .import-txt-button {
-            background-color: #2a6f9d; 
-        }
-        .import-txt-button:hover {
-            background-color: #245f83; 
-        }
-        .download-pdf-button {
-            background-color: #E76F51; 
-        }
-        .download-pdf-button:hover {
-            background-color: #D16040; 
-        }
-        .level-complete-button {
-            background-color: #4CAF50; 
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-size: 1.125rem; 
-            font-weight: bold;
-            margin-top: 1.5rem; 
-            text-align: center;
-            width: auto;
-            display: inline-block; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease-out, background-color 0.3s ease;
-        }
-        .level-complete-button:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
-        }
-        .journey-path {
-            height: 8px; 
-            background: linear-gradient(to right, #A8DADC, #F4A261, #E76F51);
-            border-radius: 4px;
-            position: relative;
-            margin-top: -20px; 
-            z-index: -1; 
-        }
-        .journey-milestone {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative; 
-        }
-        .milestone-icon-bg {
-            background-color: #FFFFFF; 
-            padding: 4px;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 4px;
-        }
-         .milestone-text {
-            font-size: 0.75rem; 
-            font-weight: 600; 
-            color: #5D534A;
-            margin-top: 0.25rem; 
-        }
-
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
     </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-primary': '#0284c7', 
+                        'brand-secondary': '#f59e0b',
+                        'brand-light': '#f0f9ff',
+                        'brand-dark': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
+<body class="bg-brand-light text-brand-dark">
 
-    <header class="bg-gradient-to-r from-[#A8DADC] to-[#F4A261] text-white py-10 px-4 text-center rounded-b-2xl shadow-lg">
-        <h1 class="text-4xl md:text-5xl font-bold mb-3">Level Up Your Dreams</h1>
-        <p class="text-xl md:text-2xl">Dein interaktiver Begleiter zur Traumkarriere</p>
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#home" class="nav-link text-2xl font-black text-brand-dark tracking-tighter">
+                ALON AKADEMIE <span class="text-brand-primary">WESEL</span>
+            </a>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#memberships" class="nav-link text-gray-600 hover:text-brand-primary transition-colors">Mitgliedschaften</a>
+                <a href="#courses" class="nav-link text-gray-600 hover:text-brand-primary transition-colors">Kurse</a>
+                <a href="#support" class="nav-link text-gray-600 hover:text-brand-primary transition-colors">Unterstützen</a>
+                <a href="#about" class="nav-link text-gray-600 hover:text-brand-primary transition-colors">Über Uns</a>
+            </div>
+            <a href="#support" class="nav-link hidden md:inline-block bg-brand-primary text-white font-bold py-2 px-4 rounded-full hover:bg-sky-700 transition-transform hover:scale-105">Jetzt Handeln</a>
+             <button id="mobile-menu-button" class="md:hidden p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg">
+            <a href="#memberships" class="nav-link block text-center py-3 px-4 text-gray-600 hover:bg-brand-light hover:text-brand-primary">Mitgliedschaften</a>
+            <a href="#courses" class="nav-link block text-center py-3 px-4 text-gray-600 hover:bg-brand-light hover:text-brand-primary">Kurse</a>
+            <a href="#support" class="nav-link block text-center py-3 px-4 text-gray-600 hover:bg-brand-light hover:text-brand-primary">Unterstützen</a>
+            <a href="#about" class="nav-link block text-center py-3 px-4 text-gray-600 hover:bg-brand-light hover:text-brand-primary">Über Uns</a>
+             <a href="#support" class="nav-link block text-center py-3 my-2 mx-4 bg-brand-primary text-white font-bold rounded-full hover:bg-sky-700">Jetzt Handeln</a>
+        </div>
     </header>
 
-    <nav id="mainNav" class="sticky-nav py-3">
-        <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-2">
-            <a href="#overview" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Überblick</a>
-            <a href="#teil1" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Start</a>
-            <a href="#teil2" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Wöchentliche Level</a>
-            <a href="#downloadSection" class="text-lg font-semibold hover:text-[#E76F51] transition-colors">Speichern & Laden</a>
-        </div>
-    </nav>
+    <main class="container mx-auto px-6 py-8 md:py-16">
 
-    <main id="mainContentToExport" class="container mx-auto p-4 md:p-8">
-
-        <section id="overview" class="content-card">
-            <h2 class="section-title">Das Programm im Überblick</h2>
-            <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
-                "Level Up Your Dreams" ist ein 10-wöchiges, strukturiertes Programm, das dich auf eine spannende Entdeckungsreise zu deiner Traumkarriere mitnimmt. Es ist dein persönliches Logbuch, um Ideen, Pläne und Erfolge festzuhalten und Klarheit für deine berufliche Zukunft zu gewinnen. Deine Eingaben werden lokal in deinem Browser gespeichert und können als Datei gesichert und wieder geladen werden. Begib dich auf die Reise!
-            </p>
-            
-            <div class="mt-8 mb-12 flex flex-col items-center">
-                <div class="w-full max-w-3xl px-4"> 
-                    <div class="flex justify-between items-end relative mb-2">
-                        <div class="journey-milestone">
-                            <div class="milestone-icon-bg">
-                                <span class="text-3xl text-[#A8DADC]">🚀</span>
-                            </div>
-                            <p class="milestone-text">Start</p>
-                        </div>
-
-                        <div class="journey-milestone">
-                             <div class="milestone-icon-bg">
-                                <span class="text-4xl">🚶</span> 
-                            </div>
-                            <p class="milestone-text text-[#E76F51]">Deine Reise</p>
-                        </div>
-
-                        <div class="journey-milestone">
-                            <div class="milestone-icon-bg bg-[#A8DADC]/30">
-                                <span class="text-2xl font-bold text-[#5D534A]">10</span>
-                            </div>
-                            <p class="milestone-text">Wochen</p>
-                        </div>
-
-                         <div class="journey-milestone">
-                            <div class="milestone-icon-bg bg-[#F4A261]/30">
-                                <span class="text-2xl font-bold text-[#5D534A]">9+</span>
-                            </div>
-                            <p class="milestone-text">Level</p>
-                        </div>
-
-                        <div class="journey-milestone">
-                            <div class="milestone-icon-bg">
-                                <span class="text-3xl text-[#E76F51]">🏆</span>
-                            </div>
-                            <p class="milestone-text">Ziel</p>
-                        </div>
-                    </div>
-                    <div class="journey-path"></div>
+        <section id="home" class="page-section">
+            <div class="text-center mb-16">
+                <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-4">Zukunft gestalten in <span class="text-brand-primary">Wesel.</span></h1>
+                <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-8">Willkommen in der Alon Akademie. Wir sind eine Kreativwerkstatt und ein Zukunftslabor, in dem junge Menschen ihre Leidenschaften entdecken, neue Fähigkeiten entwickeln und lernen, ihre Welt mit Mut und Kreativität zu gestalten. Offizielle Eröffnung am 4. Juli 2025!</p>
+                <div class="space-x-4">
+                    <a href="#courses" class="nav-link bg-brand-primary text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-sky-700 transition-transform hover:scale-105">Unsere Angebote</a>
+                    <a href="#support" class="nav-link bg-white text-brand-primary border-2 border-brand-primary font-bold py-3 px-8 rounded-full text-lg hover:bg-brand-light transition-transform hover:scale-105">Mission unterstützen</a>
                 </div>
-                <p class="text-center text-md text-[#5D534A] mt-10">
-                    Dieses interaktive SPA dient als digitaler Überblick und Begleiter zum physischen oder digitalen Logbuch. Es hilft dir, die Struktur und die Inhalte der einzelnen Wochen schnell zu erfassen.
-                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <a href="#memberships" class="nav-link bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                    <h3 class="text-2xl font-bold mb-2">Mitglied werden</h3>
+                    <p class="text-gray-600">Entdecke unsere Mitgliedschaften für den regelmäßigen Zugang zu Raum, Werkzeugen und einer kreativen Gemeinschaft.</p>
+                </a>
+                <a href="#courses" class="nav-link bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                    <h3 class="text-2xl font-bold mb-2">Sommerkurse</h3>
+                    <p class="text-gray-600">Tauche ein in unsere "Kreativ-Welle" Sommercamps. Eine Woche voller Innovation, von 3D-Druck bis Impro-Theater.</p>
+                </a>
+                <a href="#support" class="nav-link bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                     <h3 class="text-2xl font-bold mb-2">Spenden</h3>
+                    <p class="text-gray-600">Deine finanzielle Unterstützung ermöglicht unsere Programme und gibt Kindern in Not die Chance, teilzunehmen.</p>
+                </a>
+                <a href="#support" class="nav-link bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                     <h3 class="text-2xl font-bold mb-2">Ehrenamt</h3>
+                    <p class="text-gray-600">Teile deine Zeit und dein Talent. Werde Mentor, gib einen Workshop oder unterstütze uns hinter den Kulissen.</p>
+                </a>
             </div>
         </section>
 
-        <section id="teil1" class="content-card">
-            <h2 class="section-title">Teil 1: Start ins Abenteuer</h2>
-            <p class="text-center text-lg mb-8 max-w-3xl mx-auto">
-                Bevor die Reise richtig losgeht, schaffen wir eine Grundlage. Dieser erste Teil hilft dir, dich auf das Programm einzustimmen und deinen aktuellen Standpunkt zu reflektieren.
-            </p>
-
-            <div>
-                <h3 class="subsection-title"><span class="icon-placeholder">📖</span>Folie 1: Titelfolie (Konzept)</h3>
-                <p>Die Reise beginnt mit deinem Namen und dem Versprechen einer spannenden Entwicklung: "Level Up Your Dreams – Dein persönliches Logbuch zur Traumkarriere".</p>
-                <div class="input-field-container">
-                    <div id="userNameInput" class="input-field-placeholder" contenteditable="true" data-placeholder="[Dein Name hier eintragen]">[Dein Name hier eintragen]</div>
-                    <span id="lock-icon-userNameInput" class="lock-icon">🔓</span>
+        <section id="memberships" class="page-section hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-black tracking-tighter">Werde ein Alon Mitglied</h2>
+                <p class="max-w-3xl mx-auto text-lg text-gray-600 mt-4">Unsere Mitgliedschaft bietet deinem Kind einen inspirierenden Ort nach der Schule oder in den Ferien. Hier wird Bildschirmzeit gegen praktische Kreativität getauscht. Als Teil einer lebendigen Gemeinschaft von jungen Machern werden Freundschaften geschlossen und Woche für Woche neue Fähigkeiten entwickelt.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-brand-secondary">
+                    <h3 class="text-2xl font-bold mb-2">Discovery Pass</h3>
+                    <p class="text-gray-500 mb-4">Der perfekte Start</p>
+                    <p class="text-5xl font-black mb-4">€25</p>
+                    <p class="text-gray-600 mb-6">Einmalige Zahlung für einen vollen Monat unbegrenzten Drop-in-Zugang. Die ideale, unverbindliche Art, uns kennenzulernen.</p>
+                    <button class="w-full bg-brand-secondary text-brand-dark font-bold py-3 px-6 rounded-full hover:bg-amber-500 transition-transform hover:scale-105">Start Your Discovery</button>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-brand-primary scale-105">
+                     <p class="text-center font-bold text-brand-primary mb-2">Beliebteste Wahl</p>
+                    <h3 class="text-2xl font-bold mb-2">The Alon Crew</h3>
+                    <p class="text-gray-500 mb-4">All-Access Pass</p>
+                    <p class="text-5xl font-black mb-4">€99</p>
+                    <p class="text-gray-600 mb-6">Unbegrenzter Zugang während der Öffnungszeiten (Mo-Do, 13:00-17:30). Flexibles 3-Monats-Abo & 75% Rabatt auf Sommercamps!</p>
+                    <button class="w-full bg-brand-primary text-white font-bold py-3 px-6 rounded-full hover:bg-sky-700 transition-transform hover:scale-105">Join the Crew</button>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-green-500">
+                    <h3 class="text-2xl font-bold mb-2">Community Builder</h3>
+                    <p class="text-gray-500 mb-4">Geben & Wachsen</p>
+                    <p class="text-5xl font-black mb-4">€150</p>
+                    <p class="text-gray-600 mb-6">Beinhaltet eine volle "Alon Crew"-Mitgliedschaft für dein Kind UND sponsert eine weitere für ein Kind aus einer einkommensschwachen Familie.</p>
+                    <button class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-full hover:bg-green-600 transition-transform hover:scale-105">Become a Builder</button>
                 </div>
             </div>
-
-            <div class="mt-8">
-                <h3 class="subsection-title"><span class="icon-placeholder">👋</span>Folie 2: Willkommen an Bord!</h3>
-                <p class="mb-3">"Herzlich willkommen zu deiner persönlichen Traumjob-Expedition! Dieses Logbuch ist dein treuer Begleiter für die nächsten 10 Wochen. Hier hältst du deine Entdeckungen, Ideen, Pläne und Erfolge fest. Mach es zu DEINEM Buch!"</p>
-                <ul class="list-none space-y-2">
-                    <li class="flex items-start"><span class="text-2xl mr-3">🚀</span> Sei ehrlich zu dir selbst. Deine Gedanken und Gefühle sind hier richtig.</li>
-                    <li class="flex items-start"><span class="text-2xl mr-3">🌟</span> Sei mutig und denke groß. Trau dich, auch verrückte Ideen aufzuschreiben!</li>
-                    <li class="flex items-start"><span class="text-2xl mr-3">🎨</span> Sei kreativ – es gibt kein Richtig oder Falsch. Gestalte dein Logbuch, wie es dir gefällt.</li>
-                    <li class="flex items-start"><span class="text-2xl mr-3">🏆</span> Feiere deine Fortschritte, egal wie klein! Jeder Schritt zählt.</li>
-                </ul>
+             <div class="text-center mt-12 bg-sky-100/50 p-8 rounded-2xl">
+                <h3 class="text-2xl font-bold">Gesponsertes Mitgliedschaftsprogramm</h3>
+                <p class="max-w-3xl mx-auto text-gray-700 mt-2 mb-4">Alon ist ein Ort für jedes Kind. Durch unser Community Builder Programm bieten wir kostenlose Mitgliedschaften an. Wenn du glaubst, dass dein Kind davon profitieren würde, laden wir dich herzlich ein, dich zu bewerben. Der Prozess ist einfach und vertraulich.</p>
+                <button class="bg-white text-brand-primary border-2 border-brand-primary font-bold py-2 px-6 rounded-full hover:bg-brand-light">Für Sponsoring bewerben</button>
             </div>
+        </section>
 
-            <div class="mt-8">
-                <h3 class="subsection-title"><span class="icon-placeholder">📍</span>Folie 3: Mein Startpunkt – Wer bin ich heute?</h3>
-                <p>"Bevor die Reise richtig losgeht, halte kurz fest, wo du gerade stehst."</p>
-                <div class="space-y-4 mt-4">
-                    <div>
-                        <label for="startThreeWords" class="font-semibold">Das bin ich (in 3 Worten, die mich gut beschreiben):</label>
-                        <div class="input-field-container">
-                            <div id="startThreeWords" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine 3 Worte]">[Schreibe hier deine 3 Worte]</div>
-                            <span id="lock-icon-startThreeWords" class="lock-icon">🔓</span>
-                        </div>
+        <section id="courses" class="page-section hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-black tracking-tighter">Kreativ-Welle Sommer</h2>
+                 <p class="max-w-3xl mx-auto text-lg text-gray-600 mt-4">In den Sommerferien (14. Juli – 26. August 2025) tauschen wir Langeweile gegen spannende, praktische Projekte. Unsere 4-tägigen Camps sollen die Leidenschaft deines Kindes für Kreativität und Technologie in einer unterstützenden Umgebung wecken.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">Future Makers: 3D-Druck & Robotik</h3>
+                    <p class="text-sm text-gray-500 mb-3">21. - 24. Juli | Alter: 12-15</p>
+                    <p class="text-gray-600 flex-grow">Von der Fantasie zur Kreation! Kinder lernen, coole Objekte am Computer zu entwerfen und sie auf unserem 3D-Drucker zum Leben zu erwecken. Anschließend programmieren sie einen Roboter, um lustige Herausforderungen zu meistern.</p>
+                     <div class="mt-4 pt-4 border-t">
+                        <p class="text-2xl font-bold text-right text-brand-primary">€150</p>
+                        <button class="w-full mt-2 bg-brand-primary text-white font-bold py-2 px-4 rounded-full hover:bg-sky-700">Anmelden</button>
                     </div>
-                    <div>
-                        <label for="startFutureVision" class="font-semibold">Meine aktuelle (Traum-)Vorstellung von meiner beruflichen Zukunft:</label>
-                         <div class="input-field-container">
-                            <div id="startFutureVision" class="input-field-placeholder" contenteditable="true" data-placeholder="[Beschreibe oder füge hier dein Bild ein]">[Beschreibe oder füge hier dein Bild ein]</div>
-                            <span id="lock-icon-startFutureVision" class="lock-icon">🔓</span>
-                        </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">Schachmeister</h3>
+                    <p class="text-sm text-gray-500 mb-3">28. - 31. Juli | Alter: 12-15</p>
+                    <p class="text-gray-600 flex-grow">Lerne das ultimative Strategiespiel! Unter der Anleitung unseres Schachenthusiasten Lukas und lokaler Großmeister lernen die Kinder alles von den Grundzügen bis zu cleveren Taktiken.</p>
+                     <div class="mt-4 pt-4 border-t">
+                        <p class="text-2xl font-bold text-right text-brand-primary">€120</p>
+                        <button class="w-full mt-2 bg-brand-primary text-white font-bold py-2 px-4 rounded-full hover:bg-sky-700">Anmelden</button>
                     </div>
-                    <div>
-                        <label for="startHopes" class="font-semibold">Was ich mir von dieser 'Level Up Your Dreams'-Reise erhoffe:</label>
-                        <div class="input-field-container">
-                            <div id="startHopes" class="input-field-placeholder" contenteditable="true" data-placeholder="[Schreibe hier deine Hoffnungen/Ziele]">[Schreibe hier deine Hoffnungen/Ziele]</div>
-                            <span id="lock-icon-startHopes" class="lock-icon">🔓</span>
-                        </div>
+                </div>
+                 <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">Impro-Theater: Entfessle deinen inneren Performer</h3>
+                     <p class="text-sm text-gray-500 mb-3">4. - 7. August | Alter: 12-15</p>
+                    <p class="text-gray-600 flex-grow">Keine Skripte – nur Spaß! In diesem Workshop geht es darum, Selbstvertrauen aufzubauen, schnell zu denken und gemeinsam lustige Szenen zu schaffen.</p>
+                     <div class="mt-4 pt-4 border-t">
+                        <p class="text-2xl font-bold text-right text-brand-primary">€120</p>
+                        <button class="w-full mt-2 bg-brand-primary text-white font-bold py-2 px-4 rounded-full hover:bg-sky-700">Anmelden</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="teil2" class="content-card">
-            <h2 class="section-title">Teil 2: Die Wöchentlichen Level</h2>
-            <p class="text-center text-lg mb-6 max-w-3xl mx-auto">
-                Jede Woche ein neues Level! Entdecke deine Stärken, erkunde Berufsfelder, entwickle Zukunftsvisionen und plane konkrete Schritte. Wähle eine Woche aus, um die Details zu sehen:
-            </p>
-            <div id="weeklyLevelsTabs" class="flex flex-wrap justify-center border-b-2 border-gray-200 mb-6">
-                </div>
-            <div id="weeklyLevelsContent">
-                </div>
-        </section>
-
-        <section id="downloadSection" class="content-card">
-            <h2 class="section-title">Fortschritt Speichern & Laden</h2>
-            <p class="text-center text-lg mb-6 max-w-3xl mx-auto">
-                Sichere deine Eingaben in einer Textdatei oder lade einen früheren Stand. Zusätzlich kannst du die gesamte Seite als PDF exportieren.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
-                <button id="exportInputsTxtButton" class="action-button export-txt-button">💾 Fortschritt speichern (TXT)</button>
-                <button id="importInputsTxtButton" class="action-button import-txt-button">📂 Fortschritt laden (TXT)</button>
-                <button id="downloadInputsPdfButton" class="action-button download-pdf-button">📄 Seite als PDF exportieren</button>
+        <section id="support" class="page-section hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-black tracking-tighter">Unterstütze unsere Mission</h2>
+                 <p class="max-w-3xl mx-auto text-lg text-gray-600 mt-4">Die Alon Akademie ist eine gemeinnützige Initiative. Dein Beitrag, ob durch eine finanzielle Gabe oder deine Zeit, ist entscheidend für unsere Mission, die Jugend von Wesel zu stärken.</p>
             </div>
-            <input type="file" id="importFileInput" accept=".txt" class="hidden">
+
+            <div class="grid lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-2xl font-bold mb-2">Spenden: Treibe unsere Mission an</h3>
+                    <p class="text-gray-600 mb-6">Deine finanzielle Unterstützung fließt direkt in unsere Programme. Regelmäßige monatliche Spenden sind am effektivsten, da sie uns die Stabilität geben, langfristig wirkungsvolle Programme zu planen.</p>
+                    <div class="chart-container mb-6">
+                        <canvas id="donationChart"></canvas>
+                    </div>
+                     <div class="text-center">
+                        <button class="bg-brand-primary text-white font-bold py-3 px-8 rounded-full hover:bg-sky-700 transition-transform hover:scale-105">Jetzt Spenden</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-2xl font-bold mb-2">Ehrenamt: Teile deine Zeit & dein Talent</h3>
+                    <p class="text-gray-600 mb-4">Bereit, in Wesel einen spürbaren Unterschied zu machen? Deine Fähigkeiten und deine Leidenschaft sind für uns von unschätzbarem Wert.</p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="p-4 bg-sky-50 rounded-lg"><strong>Werde Gast-'Aktivator':</strong> Leite einen einmaligen Workshop in deinem Fachgebiet.</li>
+                        <li class="p-4 bg-sky-50 rounded-lg"><strong>Sei ein Alon Space Coach:</strong> Mentoriere Kinder bei ihren Projekten.</li>
+                        <li class="p-4 bg-sky-50 rounded-lg"><strong>Bring deine Idee ein:</strong> Wir sind immer offen für neue Wege der Zusammenarbeit.</li>
+                    </ul>
+                    <button class="w-full mt-6 bg-brand-secondary text-brand-dark font-bold py-3 rounded-full hover:bg-amber-500 transition-transform hover:scale-105">Ich möchte helfen!</button>
+                    <p class="text-xs text-gray-500 mt-4 text-center">Bitte beachte: Zum Schutz unserer Kinder durchlaufen alle Freiwilligen einen standardisierten Überprüfungs- und Bestätigungsprozess.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="about" class="page-section hidden">
+             <div class="text-center mb-12">
+                <h2 class="text-4xl font-black tracking-tighter">Über die Alon Akademie</h2>
+                 <p class="max-w-3xl mx-auto text-lg text-gray-600 mt-4">Wir glauben, dass in jedem Kind ein Gestalter steckt. Unsere Mission ist es, einen Raum zu schaffen, in dem Neugierde gefeiert, Fehler als Lernchancen gesehen und Ideen in die Tat umgesetzt werden.</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-lg">
+                <p class="text-lg text-gray-700 leading-relaxed">Die Alon Akademie, eine gemeinnützige Initiative gegründet von Alicia Reimer, Mary Ann Loja und Lukas Loja, eröffnet am 4. Juli 2025 ihre Türen am Großer Markt 4 in Wesel. Als Kreativwerkstatt und Zukunftslabor befähigen wir junge Menschen, ihre Talente zu entdecken und ihre Umgebung mit Mut, Kreativität und unternehmerischem Geist positiv zu verändern. Von Programmieren und 3D-Druck bis hin zu handwerklichem Arbeiten und der aktiven Gestaltung ihrer Stadt – wir bieten Raum und Werkzeuge für vielfältige Projekte.</p>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">Dieses Projekt wird durch die entscheidende Förderung der <span class="font-bold">ALTANA AG</span> und der <span class="font-bold">Deutschen Fernsehlotterie</span> sowie durch die Unterstützung zahlreicher lokaler Partner ermöglicht. Wir arbeiten eng mit Schulen, lokalen Unternehmen und Initiativen zusammen, um den unternehmerischen Geist und das Selbstvertrauen junger Menschen zu wecken. </p>
+                 <div class="mt-8 border-t pt-6">
+                    <h3 class="text-xl font-bold text-center mb-4">Unsere Unterstützer</h3>
+                    <div class="flex justify-center items-center flex-wrap gap-8">
+                        <p class="font-bold text-gray-600">ALTANA AG</p>
+                        <p class="font-bold text-gray-600">Deutsche Fernsehlotterie</p>
+                        <p class="font-bold text-gray-600">Deutsche Stiftung für Engagement und Ehrenamt</p>
+                        <p class="font-bold text-gray-600">Entwicklungsagentur Wesel</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
-
-    <footer class="text-center py-10 border-t border-gray-200">
-        <p class="text-[#5D534A]">&copy; <span id="currentYear"></span> Level Up Your Dreams - Interaktiver Logbuch-Überblick.</p>
-        <p class="text-sm text-gray-500">Entwickelt zur Unterstützung deiner Karriere-Expedition.</p>
+    
+    <footer class="bg-brand-dark text-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 Alon Akademie Wesel. Ein Ort, an dem Ideen wachsen.</p>
+            <p class="text-sm text-sky-200/60 mt-2">Großer Markt 4, 46483 Wesel | info@alonakademie.com</p>
+        </div>
     </footer>
 
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-        
-        function isFieldFilled(div) {
-            if (!div || !div.dataset) return false;
-            const placeholderText = div.dataset.placeholder;
-            const currentText = div.textContent.trim();
-            return currentText !== '' && currentText !== placeholderText;
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageSections = document.querySelectorAll('.page-section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
 
-        function setLockState(divId, locked) {
-            const div = document.getElementById(divId);
-            const lockIcon = document.getElementById(`lock-icon-${divId}`);
-            if (div && lockIcon) {
-                if (locked) {
-                    div.contentEditable = "false";
-                    lockIcon.textContent = '🔒';
-                    lockIcon.classList.add('locked');
-                    div.classList.add('bg-gray-100'); // Visual cue for non-editable
-                } else {
-                    div.contentEditable = "true";
-                    lockIcon.textContent = '🔓';
-                    lockIcon.classList.remove('locked');
-                    div.classList.remove('bg-gray-100');
-                }
-            }
-        }
-
-        function checkLevelCompletion(levelNumber) {
-            const levelContentElement = document.getElementById(`level-${levelNumber}-content`);
-            if (!levelContentElement) return;
-
-            const inputFieldsInLevel = levelContentElement.querySelectorAll('.input-field-placeholder[contenteditable]');
-            let allFilled = true;
-            if (inputFieldsInLevel.length === 0) {
-                allFilled = true; 
-            } else {
-                inputFieldsInLevel.forEach(div => {
-                    if (!isFieldFilled(div)) {
-                        allFilled = false;
-                    }
+            function showPage(pageId, pushState = true) {
+                pageSections.forEach(section => {
+                    section.classList.add('hidden');
                 });
-            }
-            
-            const completeButton = document.getElementById(`level-complete-btn-${levelNumber}`);
-            if (completeButton) {
-                if (allFilled) {
-                    completeButton.classList.remove('hidden');
+                const targetSection = document.getElementById(pageId);
+                if (targetSection) {
+                    targetSection.classList.remove('hidden');
+                    window.scrollTo(0, 0);
                 } else {
-                    completeButton.classList.add('hidden');
+                    document.getElementById('home').classList.remove('hidden');
                 }
-            }
-        }
 
-
-        function saveToLocalStorage(elementId, content) {
-            try {
-                localStorage.setItem(elementId, content);
-            } catch (e) {
-                console.error("Fehler beim Speichern im Local Storage:", e);
-            }
-        }
-
-        function loadFromLocalStorage(elementId) {
-            try {
-                return localStorage.getItem(elementId);
-            } catch (e) {
-                console.error("Fehler beim Laden aus dem Local Storage:", e);
-                return null;
-            }
-        }
-
-        function initializeEditableDiv(div) {
-            if (!div || !div.dataset || !div.id) return; 
-
-            const placeholderText = div.dataset.placeholder;
-            const savedContent = loadFromLocalStorage(div.id);
-            const lockIcon = document.getElementById(`lock-icon-${div.id}`);
-
-            if (savedContent !== null && savedContent.trim() !== "" && savedContent !== placeholderText) {
-                div.innerHTML = savedContent.replace(/\\n/g, '\n'); 
-                div.style.color = '#5D534A'; 
-                div.style.fontStyle = 'normal';
-                setLockState(div.id, true); // Lock if there's saved content
-            } else {
-                div.textContent = placeholderText;
-                div.style.color = '#6c757d'; 
-                div.style.fontStyle = 'italic';
-                setLockState(div.id, false); // Unlock if empty or placeholder
-            }
-            
-            let levelNumber = null;
-            let parent = div.closest('.level-content');
-            if (parent && parent.id && parent.id.startsWith('level-') && parent.id.endsWith('-content')) {
-                levelNumber = parent.id.split('-')[1];
-            }
-
-            div.addEventListener('focus', () => {
-                if(div.contentEditable !== "true") return; // Only act if editable
-                if (div.textContent === placeholderText) {
-                    div.textContent = '';
-                    div.style.color = '#5D534A';
-                    div.style.fontStyle = 'normal';
-                }
-            });
-
-            div.addEventListener('blur', () => {
-                const currentText = div.textContent; 
-                if (currentText.trim() === '') {
-                    div.textContent = placeholderText;
-                    div.style.color = '#6c757d';
-                    div.style.fontStyle = 'italic';
-                    saveToLocalStorage(div.id, placeholderText); 
-                    setLockState(div.id, false); // Keep it unlocked if empty
-                } else {
-                    saveToLocalStorage(div.id, currentText);
-                    setLockState(div.id, true); // Auto-lock if content is present
-                }
-                if(levelNumber) checkLevelCompletion(levelNumber);
-            });
-
-            if (lockIcon) {
-                lockIcon.addEventListener('click', () => {
-                    const isCurrentlyEditable = div.contentEditable === "true";
-                    if (isCurrentlyEditable) { // Trying to lock (was 🔓)
-                        if (isFieldFilled(div)) {
-                            setLockState(div.id, true);
-                            saveToLocalStorage(div.id, div.textContent); // Save on explicit lock
-                        }
-                        // If not filled, do nothing, it remains editable and 🔓
-                    } else { // Trying to unlock (was 🔒)
-                        setLockState(div.id, false);
-                        if (div.textContent === placeholderText) { // Should not happen if it was properly locked
-                             div.textContent = '';
-                             div.style.color = '#5D534A';
-                             div.style.fontStyle = 'normal';
-                        }
-                        div.focus();
-                    }
-                    if(levelNumber) checkLevelCompletion(levelNumber);
-                });
-            }
-        }
-        
-        const fullWeeklyData = [
-            {
-                level: 1,
-                title: "Entdecke deine Superkräfte",
-                icon: "🦸",
-                intro: "In diesem Level gehst du auf Entdeckungsreise zu dir selbst. Du findest heraus, was dich einzigartig macht: deine Stärken, deine wichtigsten Werte und was dich wirklich begeistert.",
-                mission: [
-                    "Finde mindestens 3 deiner persönlichen Superkräfte (Stärken).",
-                    "Bestimme deine 3 wichtigsten Werte, die dir im Leben und im Job Orientierung geben.",
-                    "Gestalte eine Übersicht deiner größten Interessen."
-                ],
-                checkpoint: {
-                    title: "Bereit für die Selbstentdeckung?",
-                    fields: [
-                        { id: "checkpoint1_feld1", label: "Meine ersten Gedanken zum Thema 'Meine Stärken und Schwächen':", placeholder: "[Was fällt dir spontan ein?]" },
-                        { id: "checkpoint1_feld2", label: "(Warm-Up) Wenn ich eine Superkraft wählen könnte, wäre das", placeholder: "[Deine Wunsch-Superkraft], weil [Begründung eintragen]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Meine Superkräfte-Karte",
-                        instruction: "Jeder Mensch hat besondere Talente! Notiere hier 3-5 deiner Stärken. Denke darüber nach: Was kannst du gut? Wofür bekommst du Komplimente? Was macht dir Spaß und fällt dir leicht?",
-                        fields: [
-                            { id: "superkraft1", label: "Meine Superkraft 1:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]" },
-                            { id: "superkraft2", label: "Meine Superkraft 2:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]" },
-                            { id: "superkraft3", label: "Meine Superkraft 3:", placeholder: "[Stärke eintragen] – Ein Beispiel, wo ich sie zeige: [Beispiel]" }
-                        ]
-                    },
-                    {
-                        title: "Mein Werte-Kompass",
-                        instruction: "Werte sind wie ein innerer Kompass. Sie zeigen dir, was dir im Leben und auch später im Beruf wirklich wichtig ist. Wähle aus der gemeinsamen Werte-Liste im Workshop deine Top 3 aus und begründe deine Wahl.",
-                        fields: [
-                            { id: "wert1", label: "Mein Wert 1:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" },
-                            { id: "wert2", label: "Mein Wert 2:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" },
-                            { id: "wert3", label: "Mein Wert 3:", placeholder: "[Wert eintragen] – Warum ist er mir wichtig? [Begründung]" }
-                        ],
-                        icon: "🧭"
-                    },
-                    {
-                        title: "Meine Interessen-Welt",
-                        instruction: "Was begeistert dich? Womit beschäftigst du dich gerne in deiner Freizeit? Erstelle eine Collage (digital oder Screenshot einer analogen) oder eine Mindmap deiner Interessen.",
-                        fields: [
-                            { id: "interessenWelt", label: "Platzhalter für Collage/Mindmap oder Liste der Top-Interessen:", placeholder: "[Bild einfügen oder Interessen auflisten]" }
-                        ],
-                        icon: "🌍"
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Meine Schätze aus Level 1",
-                    icon: "💎",
-                    fields: [
-                        { id: "ahaMoment1", label: "Mein größter 'Aha!'-Moment beim Entdecken meiner Stärken/Werte/Interessen war:", placeholder: "[Dein Aha-Moment]" },
-                        { id: "erkenntnis1", label: "Diese neue Erkenntnis über mich selbst habe ich gewonnen:", placeholder: "[Deine Erkenntnis]" },
-                        { id: "learning1", label: "Das nehme ich aus diesem Level mit für meine weitere Reise:", placeholder: "[Dein Learning]" }
-                    ]
-                }
-            },
-            {
-                level: 2,
-                title: "Expedition in die Berufswelt",
-                icon: "🔭",
-                intro: "Jetzt geht's raus in den Dschungel der Berufe! Du schaust dir an, welche Traumjobs es gibt, was dich daran reizt und entdeckst vielleicht ganz neue, spannende Berufsfelder.",
-                mission: [
-                    "Erstelle einen Steckbrief für einen deiner Traumjobs.",
-                    "Recherchiere und präsentiere 2-3 Berufe, die du noch nicht kanntest oder die total ungewöhnlich sind.",
-                    "Diskutiere, was einen Job zu einem 'Traumjob' macht."
-                ],
-                checkpoint: {
-                    title: "Bereit für Job-Entdeckungen?",
-                    fields: [
-                        { id: "aktuellerTraumjob2", label: "Mein aktueller Traumjob (oder einer davon) ist:", placeholder: "[Traumjob eintragen], weil [kurze Begründung]." },
-                        { id: "berufeSuperhelden2", label: "(Warm-Up) Wenn Berufe Superhelden wären, welcher Beruf wäre der coolste und warum?", placeholder: "[Deine kreative Antwort]." }
-                    ]
-                },
-                mission_logs: [
-                     {
-                        title: "Mein Traumjob-Steckbrief",
-                        instruction: "Wähle einen Beruf, der dich fasziniert. Recherchiere und fülle diesen Steckbrief aus.",
-                        fields: [
-                            { id: "traumjobBeruf2", label: "Berufsbezeichnung:", placeholder: "[Eintragen]" },
-                            { id: "traumjobAufgaben2", label: "Typische Aufgaben:", placeholder: "[Was macht man in diesem Beruf?]" },
-                            { id: "traumjobSpannend2", label: "Das finde ich daran besonders spannend/anziehend:", placeholder: "[Deine Motivation]" },
-                            { id: "traumjobStaerken2", label: "Welche meiner Stärken/Interessen passen zu diesem Beruf?", placeholder: "[Abgleich]" },
-                            { id: "traumjobAusbildung2", label: "Was müsste ich dafür lernen/studieren?", placeholder: "[Ausbildungsweg]" },
-                            { id: "traumjobUeberraschung2", label: "Eine Sache, die mich an diesem Beruf überrascht hat:", placeholder: "[Überraschungsmoment]" }
-                        ]
-                    },
-                    {
-                        title: "Entdeckungsreise – Unbekannte Berufe",
-                        instruction: "Es gibt so viele Berufe, von denen man noch nie gehört hat! Stelle hier 2-3 Berufe vor, die du im Workshop neu entdeckt hast oder die besonders ungewöhnlich/zukunftsträchtig sind. Was macht sie interessant?",
-                        fields: [
-                            { id: "unbekanntBeruf1_2", label: "Beruf 1: [Name des Berufs]", placeholder: "Kurzbeschreibung: [Was macht man da?] \nDas finde ich daran interessant/kurios: [Deine Gedanken]" },
-                            { id: "unbekanntBeruf2_2", label: "Beruf 2: [Name des Berufs]", placeholder: "Kurzbeschreibung: [Was macht man da?] \nDas finde ich daran interessant/kurios: [Deine Gedanken]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Neue Horizonte in Level 2",
-                    icon: "💡",
-                    fields: [
-                        { id: "entdeckungBerufswelt2", label: "Die überraschendste Entdeckung in der Berufswelt diese Woche war für mich:", placeholder: "[Deine Entdeckung]" },
-                        { id: "definitionTraumjob2", label: "Ich habe gelernt, dass ein 'Traumjob' für mich bedeutet, dass er ...", placeholder: "[Deine Definition]" },
-                        { id: "erkenntnisOrientierung2", label: "Diese Erkenntnis hilft mir bei meiner weiteren Berufsorientierung:", placeholder: "[Dein Learning]" }
-                    ]
-                }
-            },
-            {
-                level: 3,
-                title: "Reise zu meinem Zukunfts-Ich",
-                icon: "⏳",
-                intro: "Stell dir vor, du reist in die Zukunft! In diesem Level entwickelst du eine Vision davon, wie dein Leben und dein Berufsalltag in etwa 10-15 Jahren aussehen könnten. Das hilft dir, deine Ziele klarer zu sehen.",
-                mission: [
-                    "Schreibe einen 'Brief aus der Zukunft' an dein heutiges Ich.",
-                    "Gestalte ein Vision Board (digital oder analog) für dein Leben im Jahr 2035."
-                ],
-                checkpoint: {
-                    title: "Bereit für die Zeitreise?",
-                    fields: [
-                        { id: "gefuehleZukunft3", label: "Wenn ich an meine Zukunft in 10 Jahren denke, fühle ich mich:", placeholder: "[Deine Gefühle eintragen]." },
-                        { id: "arbeitsplatzZukunft3", label: "(Warm-Up) Male oder beschreibe in 3 Worten deinen idealen Arbeitsplatz der Zukunft:", placeholder: "[Deine kreative Antwort]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Brief aus meiner Zukunft (2035)",
-                        instruction: "Stell dir vor, es ist das Jahr 2035. Du bist erfolgreich und zufrieden in deinem Beruf. Schreibe einen Brief an dein heutiges Ich. Erzähle von deinem Alltag, deinem Job, was dich glücklich macht, welche Herausforderungen du gemeistert hast und gib deinem jüngeren Ich einen Rat.",
-                        fields: [ { id: "zukunftsbrief3", label: "Liebes [Dein Name] von heute, ...", placeholder: "[Dein Brief hier]" } ],
-                        icon: "✉️"
-                    },
-                    {
-                        title: "Mein Vision Board 2035",
-                        instruction: "Ein Vision Board ist eine Collage aus Bildern, Worten und Symbolen, die deine Ziele und Träume für die Zukunft darstellen. Gestalte dein Vision Board für das Jahr 2035 (digital oder analog und füge ein Foto ein). Welche Bilder und Worte repräsentieren dein Wunschleben?",
-                        fields: [
-                            { id: "visionboardBild3", label: "Platzhalter für Vision Board (Bild/Screenshot):", placeholder: "[Bild hier einfügen]" },
-                            { id: "visionboardElemente3", label: "Diese 3 Elemente auf meinem Vision Board sind mir besonders wichtig, weil:", placeholder: "[Begründung]" }
-                        ],
-                        icon: "🖼️"
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Meine Zukunftsvision aus Level 3",
-                    icon: "🌠",
-                    fields: [
-                        { id: "erkenntnisZukunftsbrief3", label: "Das Schreiben des Zukunftsbriefs / Gestalten des Vision Boards hat mir gezeigt, dass ...", placeholder: "[Deine Erkenntnis]" },
-                        { id: "eigenschaftZukunftsIch3", label: "Eine wichtige Eigenschaft meines 'Zukunfts-Ichs', die ich entwickeln möchte, ist:", placeholder: "[Eigenschaft nennen]" },
-                        { id: "motivationVision3", label: "Meine Vision für 2035 motiviert mich, weil ...", placeholder: "[Deine Motivation]" }
-                    ]
-                }
-            },
-             {
-                level: 4,
-                title: "Berufe Live – Profis im Interview",
-                icon: "🎤",
-                intro: "Theorie ist gut, Praxis ist besser! In diesem Level bereitest du Interviews mit echten Berufstätigen vor und führst sie (oder analysierst bestehende Interviews). Du bekommst so authentische Einblicke in den Berufsalltag.",
-                mission: [
-                    "Entwickle gute Interviewfragen für einen Berufstätigen.",
-                    "Führe ein (Video-)Interview oder werte ein ausführliches YouTube-Berufsinterview aus.",
-                    "Erstelle eine kurze 'Job-Reportage' (z.B. als Steckbrief oder Mini-Poster)."
-                ],
-                checkpoint: {
-                    title: "Bereit für echte Einblicke?",
-                    fields: [
-                        { id: "profiInterviewBereich4", label: "Einen Profi aus dem Bereich [Berufsbereich nennen] würde ich gerne mal interviewen, weil", placeholder: "[Begründung]." },
-                        { id: "wichtigsteFragenProfi4", label: "(Warm-Up) Die drei wichtigsten Fragen, die ich einem Profi zu seinem Job stellen würde, sind:", placeholder: "1. [Frage] 2. [Frage] 3. [Frage]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Mein Interview-Leitfaden",
-                        instruction: "Gute Vorbereitung ist alles! Notiere hier die Fragen, die du einem Berufstätigen stellen möchtest. Denke an verschiedene Bereiche: Aufgaben, Alltag, Ausbildungsweg, positive/negative Seiten, Tipps für Einsteiger.",
-                        fields: [
-                            { id: "interviewEinstieg4", label: 'Einstieg:', placeholder: '"Wie sind Sie zu diesem Beruf gekommen?"' },
-                            { id: "interviewAlltag4", label: 'Alltag:', placeholder: '"Wie sieht ein typischer Arbeitstag bei Ihnen aus?"' },
-                            { id: "interviewHerausforderungen4", label: 'Herausforderungen:', placeholder: '"Was sind die größten Herausforderungen in Ihrem Beruf?"' },
-                            { id: "interviewSchoeneSeiten4", label: 'Schöne Seiten:', placeholder: '"Was lieben Sie an Ihrer Arbeit am meisten?"' },
-                            { id: "interviewAusbildung4", label: 'Ausbildung:', placeholder: '"Welchen Ausbildungsweg würden Sie heute empfehlen?"' },
-                            { id: "interviewTipps4", label: 'Tipps:', placeholder: '"Welchen Rat haben Sie für Jugendliche, die sich für diesen Beruf interessieren?"' },
-                            { id: "interviewEigeneFragen4", label: 'Deine eigenen Fragen:', placeholder: '[Füge hier deine spezifischen Fragen ein]' }
-                        ]
-                    },
-                    {
-                        title: "Meine Interview-Erkenntnisse / Job-Reportage",
-                        instruction: "Fasse hier die wichtigsten Erkenntnisse aus deinem Interview zusammen oder gestalte eine Mini-Job-Reportage.",
-                        fields: [
-                            { id: "interviewPersonBeruf4", label: "Interviewte Person / Beruf:", placeholder: "[Name, Beruf]" },
-                            { id: "interviewTopErkenntnis4", label: "Die spannendste Aussage/Erkenntnis für mich war:", placeholder: "[Deine Top-Erkenntnis]" },
-                            { id: "interviewUeberraschung4", label: "Das hat mich am meisten überrascht:", placeholder: "[Überraschungsmoment]" },
-                            { id: "interviewBildVeraendert4", label: "Das Bild dieses Berufs hat sich für mich so verändert:", placeholder: "[Veränderung deiner Vorstellung]" },
-                            { id: "interviewPassen4", label: "Würde dieser Beruf zu mir passen? (Ja/Nein/Vielleicht) Begründung:", placeholder: "[Deine Einschätzung]" },
-                            { id: "interviewReportageScreenshot4", label: "Optionaler Screenshot der Job-Reportage:", placeholder: "[Bild einfügen]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Realitätscheck in Level 4 bestanden",
-                    icon: "🔍",
-                    fields: [
-                        { id: "gelerntUeberBeruf4", label: "Durch das Interview habe ich über den Beruf [Berufsname] gelernt, dass ...", placeholder: "[Wichtige neue Info]" },
-                        { id: "wichtigeFaehigkeitBeruf4", label: "Eine Fähigkeit, die für diesen Beruf wichtig ist und die ich auch gerne hätte/stärken möchte, ist:", placeholder: "[Fähigkeit nennen]" },
-                        { id: "wichtigkeitVerstehen4", label: "Diese Woche hat mir geholfen zu verstehen, wie wichtig es ist, ...", placeholder: "[z.B. Fragen zu stellen, hinter die Kulissen zu schauen]" }
-                    ]
-                }
-            },
-            {
-                level: 5,
-                title: "Skill Up! – Entdecke deine Fähigkeiten",
-                icon: "🛠️",
-                intro: "Jeder Job erfordert bestimmte Fähigkeiten – manche lernt man in der Ausbildung (Hard Skills), andere bringt man mit oder entwickelt sie im Umgang mit anderen (Soft Skills). In diesem Level erlebst du deine Skills in Aktion und lernst sie besser kennen.",
-                mission: [
-                    "Nimm an einer 'Skill-Challenge' im Team teil.",
-                    "Reflektiere, welche deiner Skills dabei zum Einsatz kamen.",
-                    "Erstelle eine persönliche 'Skill-Map' für einen deiner Traumjobs."
-                ],
-                checkpoint: {
-                    title: "Bereit, deine Skills zu zeigen?",
-                    fields: [
-                        { id: "stolzAufFaehigkeit5", label: "Eine Fähigkeit, auf die ich stolz bin, ist:", placeholder: "[Deine Fähigkeit]." },
-                        { id: "teamfaehigkeitFarbe5", label: "(Warm-Up) Wenn meine Teamfähigkeit eine Farbe hätte, wäre sie", placeholder: "[Farbe nennen], weil [Begründung]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Meine Skill-Challenge-Reflexion",
-                        instruction: "Denke an die Skill-Challenge aus dem Workshop. Welche Aufgabe hattet ihr? Wie habt ihr sie im Team gelöst? Welche deiner Fähigkeiten waren dabei besonders gefragt?",
-                        fields: [
-                            { id: "challengeBeschreibung5", label: "Unsere Challenge war:", placeholder: "[Kurze Beschreibung der Aufgabe]" },
-                            { id: "eingesetzteSkills5", label: "Diese Skills habe ich bei mir eingesetzt:", placeholder: "[z.B. Kreativität, Organisation, Kommunikation, Problemlösung, Teamarbeit – mit Beispielen]" },
-                            { id: "leichtgefallen5", label: "Das ist mir dabei leichtgefallen:", placeholder: "[Was gut lief]" },
-                            { id: "herausforderung5", label: "Das war eine Herausforderung für mich/uns:", placeholder: "[Schwierigkeiten]" },
-                            { id: "learningTeamwork5", label: "Was ich aus der Teamarbeit gelernt habe:", placeholder: "[Learning Teamwork]" }
-                        ]
-                    },
-                    {
-                        title: "Meine Skill-Map für den Traumjob",
-                        instruction: "Wähle einen deiner Traumjobs. Welche Fähigkeiten (Hard Skills & Soft Skills) braucht man dafür? Welche davon bringst du schon mit? Welche möchtest du noch entwickeln oder verbessern?",
-                        fields: [
-                            { id: "skillmapTraumjob5", label: "Mein Traumjob:", placeholder: "[Name des Traumjobs]" },
-                            { id: "skillmapBenoetigt5", label: "Benötigte Skills für diesen Job:", placeholder: "(Hard Skill 1, Hard Skill 2, Soft Skill 1, Soft Skill 2, etc. with examples)" },
-                            { id: "skillmapAktuell5", label: "Meine aktuellen Skills, die dazu passen:", placeholder: "(Skill 1 you already have, Skill 2 you already have, etc.)" },
-                            { id: "skillmapEntwickeln5", label: "Skills, die ich noch entwickeln/verbessern möchte:", placeholder: "(Skill 1 you want to learn, Skill 2 you want to learn, etc.)" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Fähigkeiten-Boost in Level 5",
-                    icon: "👍",
-                    fields: [
-                        { id: "ueberraschungSkillChallenge5", label: "Ich war überrascht, dass ich bei der Skill-Challenge gut darin war, ...", placeholder: "[Positive Überraschung]" },
-                        { id: "unterschiedSoftHardSkills5", label: "Der Unterschied zwischen Soft Skills und Hard Skills ist mir jetzt klarer. Ein wichtiger Soft Skill für fast jeden Beruf ist meiner Meinung nach:", placeholder: "[Soft Skill nennen]." },
-                        { id: "vorsatzSkillArbeiten5", label: "Ich nehme mir vor, an folgendem Skill gezielt zu arbeiten:", placeholder: "[Skill nennen], indem ich [konkrete Idee zur Verbesserung]." }
-                    ]
-                }
-            },
-            {
-                level: 6,
-                title: "Mein Karriere-Fahrplan",
-                icon: "🗺️",
-                intro: "Eine Vision ist toll, aber wie kommst du dahin? In diesem Level erstellst du mit dem 'Career Canvas' einen ersten persönlichen Fahrplan für deinen Weg zum Traumjob.",
-                mission: [
-                    "Fülle dein persönliches 'Career Canvas' aus.",
-                    "Hole dir Feedback von deinen Mitschülern zu deinem Plan."
-                ],
-                checkpoint: {
-                    title: "Bereit zum Planen?",
-                    fields: [
-                        { id: "gedankenPlanen6", label: "Einen Plan zu haben, ist für mich wichtig/manchmal schwierig, weil", placeholder: "[Deine Gedanken zum Planen]." },
-                        { id: "karrierewegFahrzeug6", label: "(Warm-Up) Wenn mein Karriereweg ein Fahrzeug wäre, dann ein", placeholder: "[Fahrzeug nennen], weil [Begründung]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Mein Karriere-Canvas",
-                        instruction: "Nutze die Vorlage aus dem Workshop, um dein Career Canvas auszufüllen.",
-                        fields: [
-                            { id: "karriereZiel6", label: "Mein Ziel / Mein Traumjob:", placeholder: "[Was möchtest du erreichen?]" },
-                            { id: "karriereMotivation6", label: "Meine Motivation / Warum will ich das?", placeholder: "[Was treibt dich an?]" },
-                            { id: "karriereErsteSchritte6", label: "Erste konkrete Schritte (Nächste 1-3 Monate):", placeholder: "[Was tust du als Erstes?]" },
-                            { id: "karriereSkillsRessourcen6", label: "Benötigte Fähigkeiten & Ressourcen:", placeholder: "[Was brauchst du dafür? (Skills, Wissen, Kontakte, Geld)]" },
-                            { id: "karriereUnterstuetzer6", label: "Meine Unterstützer (Personen, Netzwerke):", placeholder: "[Wer oder was kann dir helfen?]" },
-                            { id: "karriereHindernisse6", label: "Mögliche Hindernisse & Herausforderungen:", placeholder: "[Was könnte schwierig werden?]" },
-                            { id: "karriereUeberwindung6", label: "Wie ich diese Hindernisse überwinden kann:", placeholder: "[Deine Lösungsansätze]" }
-                        ]
-                    },
-                    {
-                        title: "Feedback zu meinem Karriere-Canvas",
-                        instruction: "Tausche dich mit deinen Mitschülern über dein Career Canvas aus.",
-                        fields: [
-                            { id: "feedbackWichtig6", label: "Das wichtigste Feedback, das ich bekommen habe:", placeholder: "[Feedback notieren]" },
-                            { id: "feedbackUeberraschung6", label: "Das hat mich daran überrascht oder zum Nachdenken gebracht:", placeholder: "[Reflexion]" },
-                            { id: "feedbackAenderung6", label: "Eine Sache, die ich aufgrund des Feedbacks an meinem Plan ändern/ergänzen möchte:", placeholder: "[Anpassung]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Kurs auf Zukunft in Level 6",
-                    icon: "🎯",
-                    fields: [
-                        { id: "nutzenCanvas6", label: "Das Erstellen des Karriere-Canvas hat mir geholfen, ...", placeholder: "[Nutzen des Canvas für dich]" },
-                        { id: "ersterSchrittKlar6", label: "Ein konkreter erster Schritt, den ich jetzt klarer sehe, ist:", placeholder: "[Dein erster Schritt]." },
-                        { id: "lernenPlanen6", label: "Ich habe gelernt, dass es beim Planen auch wichtig ist, ...", placeholder: "[z.B. flexibel zu bleiben, Unterstützung zu suchen]" }
-                    ]
-                }
-            },
-            {
-                level: 7,
-                title: "Netzwerk-Booster – Kontakte knüpfen",
-                icon: "🔗",
-                intro: "Niemand erreicht seine Ziele allein! In diesem Level entdeckst du die Kraft von Netzwerken. Du überlegst, wer dir auf deinem Weg helfen könnte und wie du professionell Kontakt aufnimmst.",
-                mission: [
-                    "Visualisiere dein aktuelles persönliches Netzwerk.",
-                    "Formuliere eine professionelle E-Mail-Anfrage für ein Praktikum oder ein Informationsgespräch.",
-                    "Übe die Kontaktaufnahme in Rollenspielen."
-                ],
-                checkpoint: {
-                    title: "Bereit zum Netzwerken?",
-                    fields: [
-                        { id: "definitionNetzwerken7", label: "Das Wort 'Netzwerken' bedeutet für mich:", placeholder: "[Deine Definition]." },
-                        { id: "frageBeruehmtheit7", label: "(Warm-Up) Wenn ich eine berühmte Persönlichkeit um Rat fragen könnte, wäre das", placeholder: "[Name der Person], und ich würde fragen: [Deine Frage]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Meine Netzwerk-Karte",
-                        instruction: "Wer gehört schon jetzt zu deinem Netzwerk? Denke an Familie, Freunde, Lehrer, Trainer, Nachbarn etc. Erstelle eine Mindmap oder eine Liste. Überlege auch, wer davon dir vielleicht bei deiner Berufsorientierung helfen könnte.",
-                        fields: [
-                            { id: "netzwerkMindmap7", label: "Platzhalter für Mindmap/Liste deiner Kontakte:", placeholder: "[Mindmap/Liste hier erstellen oder einfügen]" },
-                            { id: "netzwerkHelfer7", label: "Eine Person aus meinem Netzwerk, die mir vielleicht schon jetzt helfen könnte, ist:", placeholder: "[Name und wie die Person helfen könnte]" }
-                        ]
-                    },
-                    {
-                        title: "Meine Profi-Anfrage (E-Mail-Entwurf)",
-                        instruction: "Formuliere hier den Entwurf einer höflichen und professionellen E-Mail. Stell dir vor, du möchtest dich für ein kurzes Praktikum bewerben oder um ein Informationsgespräch zu einem Beruf bitten.",
-                        fields: [
-                            { id: "emailBetreff7", label: "Betreff:", placeholder: "[Klarer Betreff, z.B. Anfrage Schulpraktikum [Dein Name]]" },
-                            { id: "emailAnrede7", label: "Anrede:", placeholder: "[Sehr geehrte/r Herr/Frau ...,]" },
-                            { id: "emailEinleitung7", label: "Einleitung:", placeholder: "[Wer bist du? Warum schreibst du?]" },
-                            { id: "emailHauptteil7", label: "Hauptteil:", placeholder: "[Was ist dein Anliegen? Warum diese Firma/Person?]" },
-                            { id: "emailSchluss7", label: "Schluss:", placeholder: "[Bitte um Rückmeldung, Dank, Grußformel]" },
-                            { id: "emailUnterschrift7", label: "Deine Unterschrift:", placeholder: "[Dein Name, Klasse, Schule, ggf. Telefonnummer]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Kontakte geknüpft in Level 7",
-                    icon: "🤝",
-                    fields: [
-                        { id: "einsichtNetzwerken7", label: "Mir ist klar geworden, dass Netzwerken bedeutet, ...", placeholder: "[Deine neue Einsicht zum Netzwerken]" },
-                        { id: "aspektEmailSchreiben7", label: "Beim Formulieren der E-Mail war es für mich wichtig/schwierig, auf ...", placeholder: "[Aspekt des E-Mail-Schreibens] zu achten." },
-                        { id: "vorsatzMenschenZugehen7", label: "Ich nehme mir vor, mutiger auf Menschen zuzugehen, indem ich ...", placeholder: "[Konkreter Vorsatz]" }
-                    ]
-                }
-            },
-            {
-                level: 8,
-                title: "Realitäts-Check & Plan B",
-                icon: "🛣️",
-                intro: "Jetzt wird's praktisch! Du recherchierst, welche konkreten Ausbildungswege oder Studiengänge zu deinen Traumjobs führen und welche Voraussetzungen du dafür brauchst. Außerdem ist es immer gut, einen Plan B (oder C) in der Tasche zu haben!",
-                mission: [
-                    "Recherchiere detailliert den Ausbildungsweg für einen deiner favorisierten Berufe.",
-                    "Entwickle einen Plan B und vielleicht sogar einen Plan C für deine berufliche Zukunft.",
-                    "Erstelle einen Zeitplan für deine nächsten konkreten Schritte (z.B. Bewerbungen, Infotage)."
-                ],
-                checkpoint: {
-                    title: "Bereit für konkrete Fakten?",
-                    fields: [
-                        { id: "gefuehleBewerbung8", label: "Wenn ich an Bewerbungen und Auswahlverfahren denke, fühle ich mich:", placeholder: "[Deine Gefühle]." },
-                        { id: "unterschiedAusbildungStudium8", label: "(Warm-Up) Der Unterschied zwischen einer Ausbildung und einem Studium ist für mich (vereinfacht gesagt):", placeholder: "[Deine Erklärung]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Mein Wegweiser zum Traumjob",
-                        instruction: "Wähle einen deiner Traumjobs. Recherchiere online (z.B. auf Berufenet, Ausbildungsportalen, Hochschulwebseiten) die folgenden Punkte:",
-                        fields: [
-                            { id: "wegweiserTraumjob8", label: "Traumjob:", placeholder: "[Name des Berufs]" },
-                            { id: "wegweiserAusbildungsweg8", label: "Möglicher Ausbildungsweg/Studiengang:", placeholder: "[Genaue Bezeichnung]" },
-                            { id: "wegweiserDauer8", label: "Dauer der Ausbildung/des Studiums:", placeholder: "[Wie lange dauert es?]" },
-                            { id: "wegweiserVoraussetzungen8", label: "Wichtige Voraussetzungen (Schulabschluss, Noten, Fähigkeiten):", placeholder: "[Was wird gefordert?]" },
-                            { id: "wegweiserLerninhalte8", label: "Typische Lerninhalte/Studienfächer:", placeholder: "[Was lernt man konkret?]" },
-                            { id: "wegweiserOrte8", label: "Wo kann ich das machen (Beispielorte/Firmen/Hochschulen):", placeholder: "[Beispiele nennen]" },
-                            { id: "wegweiserInfoquelle8", label: "Eine wichtige Infoquelle für meine Recherche war:", placeholder: "[Webseite/Quelle nennen]" }
-                        ]
-                    },
-                    {
-                        title: "Mein Plan B (und C)",
-                        instruction: "Manchmal läuft es nicht wie geplant, oder Interessen ändern sich. Was wären gute Alternativen, falls dein Plan A nicht sofort klappt oder du dich umentscheidest? Skizziere hier 1-2 alternative berufliche Ziele oder Wege.",
-                        fields: [
-                            { id: "planB8", label: "Mein Plan B:", placeholder: "(Berufliches Ziel/Richtung, Warum gute Option, Erste Schritte)" },
-                            { id: "planC8", label: "Mein Plan C (optional):", placeholder: "(Berufliches Ziel/Richtung, Warum gute Option, Erste Schritte)" }
-                        ]
-                    },
-                    {
-                        title: "Mein Zeitplan für die nächsten Schritte",
-                        instruction: "Was sind deine ganz konkreten nächsten To-Dos auf dem Weg zur Berufsorientierung oder Bewerbung? Trage hier wichtige Termine und Aufgaben ein.",
-                        fields: [
-                            { id: "zeitplanAufgabe1_8", label: "Bis Ende [Monat/Jahr]:", placeholder: "[Aufgabe 1, z.B. Anmeldung Tag der offenen Tür]" },
-                            { id: "zeitplanAufgabe2_8", label: "Bis Ende [Monat/Jahr]:", placeholder: "[Aufgabe 2, z.B. Bewerbungsunterlagen zusammenstellen]" },
-                            { id: "zeitplanAufgabe3_8", label: "Langfristiges To-Do:", placeholder: "[Aufgabe 3, z.B. Noten verbessern]" },
-                            { id: "zeitplanWeitere8", label: "Weitere Termine/Aufgaben:", placeholder: "[Weitere Einträge]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: {
-                    title: "Level Up! Konkrete Pläne in Level 8 geschmiedet",
-                    icon: "✔️",
-                    fields: [
-                        { id: "erkenntnisAusbildungsweg8", label: "Die Recherche zum Ausbildungsweg hat mir gezeigt, dass ...", placeholder: "[Wichtige Erkenntnis zur Ausbildung/Studium]" },
-                        { id: "gefuehlPlanB8", label: "Einen Plan B zu haben, gibt mir das Gefühl von ...", placeholder: "[Dein Gefühl dazu]." },
-                        { id: "wichtigkeitBerufswahl8", label: "Ich habe gelernt, dass es bei der Berufswahl wichtig ist, nicht nur vom Traum zu schwärmen, sondern auch ...", placeholder: "[z.B. die Fakten zu checken, realistisch zu sein]." }
-                    ]
-                }
-            },
-            {
-                level: 9,
-                title: "Showtime! – Bereite deine Präsentation vor",
-                icon: "🌟",
-                intro: "Du hast in den letzten Wochen so viel über dich und deine beruflichen Ziele gelernt! In diesem Level bereitest du eine kurze Präsentation deiner 'Level Up Your Dreams'-Reise vor. Zeig den anderen, was du entdeckt hast und was deine Pläne sind.",
-                mission: [
-                    "Strukturiere deine Abschlusspräsentation (Wer bin ich? Was ist mein Traum? Wie will ich ihn erreichen?).",
-                    "Gestalte die wichtigsten Inhalte deiner Präsentation (z.B. als Stichpunkte für Folien).",
-                    "Übe deine Präsentation und hole dir Feedback."
-                ],
-                checkpoint: {
-                    title: "Bereit für die Bühne?",
-                    fields: [
-                        { id: "gefuehlePraesentieren9", label: "Vor anderen zu präsentieren, ist für mich:", placeholder: "[Deine Gefühle zum Präsentieren]." },
-                        { id: "filmtitelZukunft9", label: "(Warm-Up) Wenn meine berufliche Zukunft ein Filmtitel wäre, dann hieße er:", placeholder: "[Dein kreativer Filmtitel]." }
-                    ]
-                },
-                mission_logs: [
-                    {
-                        title: "Mein Präsentations-Storyboard",
-                        instruction: "Plane hier den Ablauf und die wichtigsten Inhalte deiner Abschlusspräsentation. Was möchtest du auf jeden Fall erzählen? Welche Bilder oder Beispiele willst du zeigen?",
-                        fields: [
-                            { id: "storyboardTeil1_9", label: "Folie/Abschnitt 1: Titelfolie & Vorstellung", placeholder: "(Mein Name, mein Motto für die Zukunft: [Stichpunkte])" },
-                            { id: "storyboardTeil2_9", label: "Folie/Abschnitt 2: Meine Reise – Startpunkt & Entdeckungen", placeholder: "(Meine wichtigsten Stärken/Interessen: [Stichpunkte], Mein ursprünglicher Traumjob vs. neue Entdeckungen: [Stichpunkte])" },
-                            { id: "storyboardTeil3_9", label: "Folie/Abschnitt 3: Mein Traumziel & Vision", placeholder: "(Mein aktueller Traumjob/mein berufliches Ziel: [Stichpunkte], Meine Vision für 2035 (kurz): [Stichpunkte oder Bild vom Vision Board])" },
-                            { id: "storyboardTeil4_9", label: "Folie/Abschnitt 4: Mein Plan – Die nächsten Schritte", placeholder: "(Mein Karriere-Canvas (wichtigste Punkte): [Stichpunkte], Meine konkreten nächsten 1-2 Schritte: [Stichpunkte])" },
-                            { id: "storyboardTeil5_9", label: "Folie/Abschnitt 5: Was ich gelernt habe & Abschluss", placeholder: "(Meine wichtigste Erkenntnis aus dem Programm: [Stichpunkte], Ein Dankeschön oder ein motivierender Schlusssatz: [Stichpunkte])" }
-                        ]
-                    },
-                    {
-                        title: "Feedback zu meiner Präsentation",
-                        instruction: "Nachdem du deine Präsentation (oder Teile davon) im Workshop geübt hast: Welches Feedback hast du bekommen? Was möchtest du für die finale Präsentation ändern oder verbessern?",
-                        fields: [
-                            { id: "feedbackHilfreich9", label: "Das hilfreichste Feedback, das ich erhalten habe, war:", placeholder: "[Feedback notieren]" },
-                            { id: "feedbackAendern9", label: "Eine Sache, die ich aufgrund des Feedbacks an meiner Präsentation ändern/verbessern möchte:", placeholder: "[Anpassung]" },
-                            { id: "feedbackSelbstvertrauen9", label: "Das gibt mir für die Präsentation Selbstvertrauen:", placeholder: "[Positive Aspekte]" }
-                        ]
-                    }
-                ],
-                skill_unlocked: { 
-                    title: "Level Up! Bereit für Showtime in Level 9",
-                    icon: "🎬",
-                    fields: [
-                        { id: "erkenntnisPraesentation9", label: "Die Vorbereitung meiner Präsentation hat mir geholfen, ...", placeholder: "[Deine Erkenntnis]" },
-                        { id: "sicherheitPraesentation9", label: "Ich fühle mich jetzt sicherer darin, ...", placeholder: "[Bereich des Selbstvertrauens]" },
-                        { id: "tippPraesentation9", label: "Mein wichtigster Tipp für eine gute Präsentation ist ...", placeholder: "[Dein Tipp]" }
-                    ]
-                }
-            }
-        ];
-
-
-        const tabsContainer = document.getElementById('weeklyLevelsTabs');
-        const contentContainer = document.getElementById('weeklyLevelsContent');
-
-        function renderWeeklyContent() {
-            tabsContainer.innerHTML = ''; 
-            contentContainer.innerHTML = ''; 
-
-            fullWeeklyData.forEach((week, index) => {
-                const tabButton = document.createElement('button');
-                tabButton.className = 'tab-button';
-                tabButton.textContent = `Woche ${week.level}`;
-                tabButton.setAttribute('data-level', week.level);
-
-                const weekContentWrapper = document.createElement('div'); 
-                weekContentWrapper.id = `level-${week.level}-content`;
-                weekContentWrapper.className = 'level-content hidden p-1 md:p-4 border border-gray-200 rounded-b-lg';
-                weekContentWrapper.setAttribute('data-level-number', week.level); 
-                
-                let missionLogsHTML = '';
-                if (week.mission_logs) {
-                    week.mission_logs.forEach((log, logIndex) => {
-                        missionLogsHTML += `<div class="mb-6 p-4 bg-sky-50 rounded-lg">
-                            <h5 class="text-xl font-semibold text-[#A8DADC] mb-2">${log.icon || '📝'} ${log.title}</h5>
-                            <p class="text-sm text-gray-600 mb-3">${log.instruction}</p>
-                            ${log.fields.map((f, fieldIndex) => {
-                                const divId = f.id || `field-w${week.level}-l${logIndex}-f${fieldIndex}`;
-                                return `
-                                    <div class="mb-2">
-                                        <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                        <div class="input-field-container">
-                                            <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
-                                            <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
-                                        </div>
-                                    </div>`;
-                            }).join('')}
-                        </div>`;
-                    });
+                if (pushState) {
+                    history.pushState(null, '', `#${pageId}`);
                 }
                 
-                let checkpointHTML = '';
-                if (week.checkpoint) {
-                     checkpointHTML = `<div class="mb-6 p-4 bg-orange-50 rounded-lg">
-                        <h4 class="text-xl font-semibold text-[#F4A261] mb-3"><span class="icon-placeholder">🏁</span>Checkpoint: ${week.checkpoint.title}</h4>
-                        ${week.checkpoint.fields.map((f, fieldIndex) => {
-                            const divId = f.id || `checkpoint-w${week.level}-f${fieldIndex}`;
-                            return `
-                            <div class="mb-2">
-                                <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                <div class="input-field-container">
-                                    <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
-                                    <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>`;
-                }
-
-                let skillUnlockedHTML = '';
-                if (week.skill_unlocked) {
-                    skillUnlockedHTML = `<div class="mt-6 p-4 bg-emerald-50 rounded-lg text-center">
-                        <h4 class="text-xl font-semibold text-emerald-600 mb-3">${week.skill_unlocked.icon || '🏆'} ${week.skill_unlocked.title}</h4>
-                         ${week.skill_unlocked.fields.map((f, fieldIndex) => {
-                            const divId = f.id || `skill-w${week.level}-f${fieldIndex}`;
-                            return `
-                            <div class="mb-2 text-left">
-                                <label for="${divId}" class="font-medium text-sm text-gray-700">${f.label}</label>
-                                <div class="input-field-container">
-                                    <div id="${divId}" class="input-field-placeholder text-sm" contenteditable="true" data-placeholder="${f.placeholder}">${f.placeholder}</div>
-                                    <span id="lock-icon-${divId}" class="lock-icon">🔓</span>
-                                </div>
-                            </div>`;
-                         }).join('')}
-                        <button id="level-complete-btn-${week.level}" class="level-complete-button hidden">🎉 Level ${week.level} gemeistert! 🥳</button>
-                    </div>`;
-                }
-
-
-                weekContentWrapper.innerHTML = `
-                    <div class="p-2 md:p-6">
-                        <h3 class="text-3xl font-bold text-[#E76F51] mb-2"><span class="text-4xl">${week.icon || '🗓️'}</span> Level ${week.level}: ${week.title}</h3>
-                        <p class="text-gray-600 mb-4">${week.intro}</p>
-                        <div class="mb-6 p-4 bg-rose-50 rounded-lg">
-                            <h4 class="text-xl font-semibold text-rose-500 mb-3">🎯 Mission für diese Woche:</h4>
-                            <ul class="list-none mission-list space-y-1 text-gray-700">
-                                ${week.mission.map(m => `<li>${m}</li>`).join('')}
-                            </ul>
-                        </div>
-                        ${checkpointHTML}
-                        <h4 class="text-2xl font-semibold text-[#A8DADC] my-4 text-center">Mission Logs</h4>
-                        ${missionLogsHTML}
-                        ${skillUnlockedHTML}
-                    </div>
-                `;
-
-                tabsContainer.appendChild(tabButton);
-                contentContainer.appendChild(weekContentWrapper);
-
-                tabButton.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.level-content').forEach(content => content.classList.add('hidden'));
-                    tabButton.classList.add('active');
-                    document.getElementById(`level-${week.level}-content`).classList.remove('hidden');
-                });
-
-                if (index === 0) { 
-                    tabButton.classList.add('active');
-                    weekContentWrapper.classList.remove('hidden');
-                }
-            });
-        }
-        
-        function collectAllInputsForTxtExport() {
-            let outputLines = [];
-            document.querySelectorAll('.input-field-placeholder[contenteditable="true"], .input-field-placeholder[contenteditable="false"]').forEach(div => {
-                if (div.id && div.dataset.placeholder) {
-                    const content = div.textContent; 
-                    const preservedContent = content.replace(/\n/g, '\\n'); 
-                    outputLines.push(`${div.id}:::${preservedContent}`);
-                }
-            });
-            return outputLines.join('\n');
-        }
-
-        function downloadTextFile(filename, text) {
-            const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-            element.setAttribute('download', filename);
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        }
-
-        function handleImportFile(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const lines = e.target.result.split('\n');
-                        lines.forEach(line => {
-                            const parts = line.split(':::');
-                            if (parts.length === 2) {
-                                const id = parts[0];
-                                const contentWithEscapedNewlines = parts[1];
-                                const content = contentWithEscapedNewlines.replace(/\\n/g, '\n'); 
-                                const element = document.getElementById(id);
-                                if (element) {
-                                    element.textContent = content; 
-                                    saveToLocalStorage(id, content); 
-                                    initializeEditableDiv(element); 
-                                }
-                            }
-                        });
-                        fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
-                        alert('Daten erfolgreich importiert!');
-                    } catch (error) {
-                        console.error("Fehler beim Importieren der Datei:", error);
-                        alert("Fehler beim Importieren der Datei. Bitte stelle sicher, dass es eine gültige Export-Datei ist.");
-                    }
-                    event.target.value = null; 
-                };
-                reader.readAsText(file);
-            }
-        }
-
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderWeeklyContent();
-
-            document.querySelectorAll('.input-field-placeholder[contenteditable]').forEach(div => {
-                initializeEditableDiv(div);
-            });
-            fullWeeklyData.forEach(week => checkLevelCompletion(week.level));
-            
-            const exportTxtButton = document.getElementById('exportInputsTxtButton');
-            if(exportTxtButton) {
-                exportTxtButton.addEventListener('click', () => {
-                    const allInputs = collectAllInputsForTxtExport();
-                    downloadTextFile('Mein_LevelUpYourDreams_Logbuch_Speicherstand.txt', allInputs);
-                });
+                mobileMenu.classList.add('hidden');
             }
 
-            const importFileInput = document.getElementById('importFileInput');
-            const importTxtButton = document.getElementById('importInputsTxtButton');
-            if(importTxtButton && importFileInput) {
-                importTxtButton.addEventListener('click', () => {
-                    importFileInput.click(); 
-                });
-                importFileInput.addEventListener('change', handleImportFile);
+            function handleNavigation() {
+                const pageId = window.location.hash.substring(1) || 'home';
+                showPage(pageId, false);
             }
 
-
-            const downloadPdfButton = document.getElementById('downloadInputsPdfButton');
-            if(downloadPdfButton) {
-                downloadPdfButton.addEventListener('click', () => {
-                    const mainContent = document.getElementById('mainContentToExport');
-                    const navElement = document.getElementById('mainNav');
-                    const originalNavDisplay = navElement.style.display;
-                    
-                    document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = 'none'); // Hide lock icons for PDF
-                    navElement.style.display = 'none';
-                    window.scrollTo(0, 0); 
-
-                    const originalTabVisibility = [];
-                    document.querySelectorAll('.level-content').forEach((content, index) => {
-                        originalTabVisibility[index] = content.classList.contains('hidden');
-                        content.classList.remove('hidden'); 
-                    });
-
-                    setTimeout(() => {
-                        const opt = {
-                          margin:       [10, 5, 15, 5], 
-                          filename:     'Mein_LevelUpYourDreams_Logbuch.pdf',
-                          image:        { type: 'jpeg', quality: 0.95 },
-                          html2canvas:  { 
-                            scale: 2, 
-                            useCORS: true, 
-                            scrollY: 0, 
-                            scrollX: 0,
-                            windowWidth: mainContent.scrollWidth, 
-                            windowHeight: mainContent.scrollHeight 
-                          },
-                          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                        };
-
-                        html2pdf().from(mainContent).set(opt).save().then(() => {
-                            navElement.style.display = originalNavDisplay;
-                             document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = ''); // Restore lock icons
-                            document.querySelectorAll('.level-content').forEach((content, index) => {
-                                if (originalTabVisibility[index]) {
-                                    content.classList.add('hidden');
-                                }
-                            });
-                            const activeButton = document.querySelector('.tab-button.active');
-                            if (activeButton) {
-                                const activeLevel = activeButton.getAttribute('data-level');
-                                const activeContent = document.getElementById(`level-${activeLevel}-content`);
-                                if (activeContent) {
-                                    activeContent.classList.remove('hidden');
-                                }
-                            } else if (document.querySelector('.level-content')) { 
-                                 document.querySelector('.level-content').classList.remove('hidden');
-                            }
-                        }).catch(err => {
-                            console.error("PDF generation error:", err);
-                            navElement.style.display = originalNavDisplay;
-                            document.querySelectorAll('.lock-icon').forEach(icon => icon.style.display = '');
-                            document.querySelectorAll('.level-content').forEach((content, index) => {
-                                if (originalTabVisibility[index]) {
-                                    content.classList.add('hidden');
-                                }
-                            });
-                             const activeButton = document.querySelector('.tab-button.active');
-                            if (activeButton) {
-                                const activeLevel = activeButton.getAttribute('data-level');
-                                const activeContent = document.getElementById(`level-${activeLevel}-content`);
-                                if (activeContent) {
-                                    activeContent.classList.remove('hidden');
-                                }
-                            } else if (document.querySelector('.level-content')) { 
-                                 document.querySelector('.level-content').classList.remove('hidden');
-                            }
-                        });
-                    }, 250); // Increased delay slightly
-                });
-            }
-            
-            document.querySelectorAll('#mainNav a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        const navHeight = document.getElementById('mainNav').offsetHeight;
-                        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-                        const offsetPosition = targetPosition - navHeight - 20; 
-                         window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
-                    }
+                    const pageId = this.getAttribute('href').substring(1);
+                    showPage(pageId);
                 });
             });
+            
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            window.addEventListener('popstate', handleNavigation);
+            handleNavigation();
+
+            const ctx = document.getElementById('donationChart');
+            if(ctx) {
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['€25: Material für 1 Woche', '€75: Workshop-Ticket', '€100: Monats-Stipendium'],
+                        datasets: [{
+                            label: 'Wirkung deiner Spende',
+                            data: [25, 75, 100],
+                            backgroundColor: [
+                                'rgba(251, 191, 36, 0.6)',
+                                'rgba(56, 189, 248, 0.6)',
+                                'rgba(34, 197, 94, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(251, 191, 36, 1)',
+                                'rgba(56, 189, 248, 1)',
+                                'rgba(34, 197, 94, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                     callback: function(value, index, ticks) {
+                                        return '€' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         });
     </script>
 </body>
